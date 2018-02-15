@@ -1,0 +1,40 @@
+{
+    "f": 3,
+    "replica_list": [
+        {
+            "id": 0,
+            "ip": "localhost",
+            "port": 6000
+        },
+        {
+            "id": 1,
+            "ip": "localhost",
+            "port": 6001
+        },
+        {
+            "id": 2,
+            "ip": "localhost",
+            "port": 6002
+        },
+        {
+            "id": 3,
+            "ip": "localhost",
+            "port": 6003
+        },
+        {
+            "id": 4,
+            "ip": "localhost",
+            "port": 6004
+        },
+        {
+            "id": 5,
+            "ip": "localhost",
+            "port": 6005
+        },
+        {
+            "id": 6,
+            "ip": "localhost",
+            "port": 6006
+        }
+    ]
+}
