@@ -1,40 +1,55 @@
 {
     "f": 3,
+    "mode": "script",
     "replica_list": [
         {
             "id": 0,
             "ip": "localhost",
-            "port": 6000
+            "port": 6000,
+            "skip_slot": [],
+            "drop_rate": 0.0
         },
         {
             "id": 1,
             "ip": "localhost",
-            "port": 6001
+            "port": 6001,
+            "skip_slot": [],
+            "drop_rate": 0.0
         },
         {
             "id": 2,
             "ip": "localhost",
-            "port": 6002
+            "port": 6002,
+            "skip_slot": [],
+            "drop_rate": 0.0
         },
         {
             "id": 3,
             "ip": "localhost",
-            "port": 6003
+            "port": 6003,
+            "skip_slot": [],
+            "drop_rate": 0.0
         },
         {
             "id": 4,
             "ip": "localhost",
-            "port": 6004
+            "port": 6004,
+            "skip_slot": [],
+            "drop_rate": 0.0
         },
         {
             "id": 5,
             "ip": "localhost",
-            "port": 6005
+            "port": 6005,
+            "skip_slot": [],
+            "drop_rate": 0.0
         },
         {
             "id": 6,
             "ip": "localhost",
-            "port": 6006
+            "port": 6006,
+            "skip_slot": [],
+            "drop_rate": 0.0
         }
     ]
 }
