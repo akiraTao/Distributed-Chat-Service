@@ -18,20 +18,22 @@
     'to_accept' : value,
     'proposer'  : propose_no,
     'client_request' : client_id.newest_request_id,
-    'first_unchosen_index' : first_unchosen_index
+    'first_unchosen' : first_unchosen_index,
+    'slot': slot_no
 }
 
 {
     'message_type' : 'accept',
     'accepted' : value,
     'proposer'  : propose_no,
-    'client_request' : client_id.newest_request_id
+    'client_request' : client_id.newest_request_id,
+    'slot' : slot_no
 }
 
 {
     'message_type' : 'help_me_choose',
     'replica_id' : replica_id,
-    'first_unchosen_index' : first_unchosen_index
+    'first_unchosen' : first_unchosen_index
 }
 
 {

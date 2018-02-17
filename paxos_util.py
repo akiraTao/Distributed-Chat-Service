@@ -73,6 +73,28 @@ def paxos_propose(value,
         receiver_socket.close()  
 
 
+# This function is used in Paxos accept stage (replica -> replicas)
+def paxos_accept(value,
+                 propose_no,
+                 client_request,
+                 slot,
+                 replica_config):
+    message = {
+        'message_type' : 'accept',
+        'accepted' : value,
+        'proposer' : propose_no,
+        'client_request' : client_request,
+        'slot' : slot
+    }
+    data = json.dumps(message).encode('utf-8')
+
+    for replica_id, replica_addr in replica_config.items():
+        receiver_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        receiver_socket.connect((replica_addr['ip'], replica_addr['port']))
+        receiver_socket.sendall(data)
+        receiver_socket.close()    
+
+
 # Pretty print the status of each replica for debugging
 def paxos_debug(ip, port):
     message = {
