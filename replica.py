@@ -143,6 +143,10 @@ def handle_replica(replica_id, replica_config_list):
             acked_no_more_accepted = message['no_more_accepted']
             acked_slot = message['slot']
 
+            # If I am not the leader or the round number is old, ignore the message
+            if s_my_propose_no != s_leader_propose_no:
+                continue
+
             # If this is the remaining  possible ack from previous prepare, or
             # If the slot is already proposed, ignore further ack_prepare
             if acked_slot != s_next_slot or\
@@ -172,7 +176,7 @@ def handle_replica(replica_id, replica_config_list):
                 if t_value is not None:
                     # First the leader itself should accept the value
                     s_accepted[s_next_slot] = t_value
-                    s_proposer[s_next_slot] = copy.deepcopy(t_propose_no)
+                    s_proposer[s_next_slot] = s_my_propose_no
                     s_client_request[s_next_slot] = copy.deepcopy(t_client_request)
 
                     # Increment the s_accept_msg_count
@@ -193,14 +197,14 @@ def handle_replica(replica_id, replica_config_list):
                     if s_request_queue != []:
                         client_message = s_request_queue.pop(0)
                         value = client_message['value']
-                        propose_no = s_my_propose_no,
+                        propose_no = copy.deepcopy(s_my_propose_no)
                         client_request = [client_message['client_id'],
                                           client_message['client_message_no']]
 
                         # First the leader itself should accept the value
-                        s_accepted[next_slot] = value
-                        s_proposer[next_slot] = copy.deepcopy(propose_no)
-                        s_client_request[next_slot] = copy.deepcopy(client_request)
+                        s_accepted[s_next_slot] = value
+                        s_proposer[s_next_slot] = propose_no
+                        s_client_request[s_next_slot] = client_request
 
                         # Increment the s_accept_msg_count
                         if s_next_slot not in s_accept_msg_count:
@@ -249,8 +253,8 @@ def handle_replica(replica_id, replica_config_list):
                 s_accept_msg_count[prop_slot] = 0
             s_accept_msg_count[prop_slot] += 1
 
-            # Update first_unaccepted
-            while s_first_unaccepted <= prop_slot and s_accepted.get(s_first_unaccepted, None):
+            # Update first_unaccepted to the most correct value
+            while s_first_unaccepted <= prop_slot and s_accepted.get(s_first_unaccepted, None) != None:
                 s_first_unaccepted += 1
 
             paxos_accept(s_accepted[prop_slot],
@@ -268,6 +272,10 @@ def handle_replica(replica_id, replica_config_list):
             accept_client_request = message['client_request']
             accept_slot = message['slot']
 
+            # If I have already chosen in this slot, just ignore the message
+            if accept_slot in s_learned:
+                continue
+
             # Initialize s_accept_msg_count with new slot
             if accept_slot not in s_accept_msg_count:
                 s_accept_msg_count[accept_slot] = 0
@@ -275,14 +283,13 @@ def handle_replica(replica_id, replica_config_list):
             # Ignore the old proposal no
             if accept_propose_no < s_leader_propose_no:
                 continue
-
             # If find a newer accept message, clear the count and updates leader
             elif accept_propose_no > s_leader_propose_no:
                 # Update the leader
                 s_leader_propose_no = copy.deepcopy(accept_propose_no)
                 # Clear the count and initialize with one
                 s_accept_msg_count[accept_slot] = 1
-
+            # If the accept message is just about this propose_no:
             else:
                 s_accept_msg_count[accept_slot] += 1
                 # If the majority accept arrives, learn the value
@@ -298,7 +305,43 @@ def handle_replica(replica_id, replica_config_list):
                     # TODO: tell the client the job has been done
                     print('Replica {} done with slot {}, value {}'.format(get_id(s_my_propose_no), accept_slot, s_accepted[accept_slot]))
 
+                    # If I am the leader, need to process another message
+                    if get_id(s_leader_propose_no) == get_id(s_my_propose_no):
+                        if s_leader_state == 'established':
+                            # Propose the client request, or declare waiting_client
+                            # s_next_slot has already been pointed to next slot
+                            if s_request_queue != []:
+                                client_message = s_request_queue.pop(0)
+                                value = client_message['value']
+                                propose_no = copy.deepcopy(s_my_propose_no)
+                                client_request = [client_message['client_id'],
+                                                  client_message['client_message_no']]
 
+                                # First the leader itself should accept the value
+                                s_accepted[s_next_slot] = value
+                                s_proposer[s_next_slot] = propose_no
+                                s_client_request[s_next_slot] = client_request
+
+                                # Increment the s_accept_msg_count
+                                if s_next_slot not in s_accept_msg_count:
+                                    s_accept_msg_count[s_next_slot] = 0
+                                s_accept_msg_count[s_next_slot] += 1
+
+                                # Update first_unaccepted
+                                s_first_unaccepted += 1
+                                # s_next_slot should be incremented since leader cannot propose two values in the same slot
+                                s_next_slot += 1
+
+                                paxos_propose(value, s_my_propose_no, client_request,
+                                              s_first_unchosen, s_next_slot-1, s_replica_config)
+                            else:
+                                s_waiting_client = True
+
+                        else: # if s_leader_state == 'prepare'
+                            # s_next_slot has already been pointed to next slot
+                            paxos_prepare(s_my_propose_no,
+                                          s_next_slot,
+                                          s_replica_config)
 
 
         elif message_type == 'client_request':
@@ -323,6 +366,11 @@ def handle_replica(replica_id, replica_config_list):
                 s_accepted[s_next_slot] = value
                 s_proposer[s_next_slot] = propose_no
                 s_client_request[s_next_slot] = client_request
+
+                # Increment the s_accept_msg_count
+                if s_next_slot not in s_accept_msg_count:
+                    s_accept_msg_count[s_next_slot] = 0
+                s_accept_msg_count[s_next_slot] += 1
 
                 # Update first_unaccepted
                 s_first_unaccepted += 1

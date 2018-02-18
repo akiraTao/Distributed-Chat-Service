@@ -92,7 +92,45 @@ def paxos_accept(value,
         receiver_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         receiver_socket.connect((replica_addr['ip'], replica_addr['port']))
         receiver_socket.sendall(data)
-        receiver_socket.close()    
+        receiver_socket.close()
+
+
+# Propose the client request, or declare waiting_client
+def propose_client_request(s_request_queue,
+                           s_my_propose_no,
+                           s_next_slot,
+                           s_accepted,
+                           s_proposer,
+                           s_client_request,
+                           s_accept_msg_count,
+                           s_first_unaccepted,
+                           s_first_unchosen):
+    if s_request_queue != []:
+        client_message = s_request_queue.pop(0)
+        value = client_message['value']
+        propose_no = copy.deepcopy(s_my_propose_no)
+        client_request = [client_message['client_id'],
+                          client_message['client_message_no']]
+
+        # First the leader itself should accept the value
+        s_accepted[s_next_slot] = value
+        s_proposer[s_next_slot] = propose_no
+        s_client_request[s_next_slot] = client_request
+
+        # Increment the s_accept_msg_count
+        if s_next_slot not in s_accept_msg_count:
+            s_accept_msg_count[s_next_slot] = 0
+        s_accept_msg_count[s_next_slot] += 1
+
+        # Update first_unaccepted
+        s_first_unaccepted += 1
+        # s_next_slot should be incremented since leader cannot propose two values in the same slot
+        s_next_slot += 1
+
+        paxos_propose(value, s_my_propose_no, client_request,
+                      s_first_unchosen, s_next_slot-1, s_replica_config)
+    else:
+        s_waiting_client = True
 
 
 # Pretty print the status of each replica for debugging

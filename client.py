@@ -7,8 +7,8 @@ import socket
 def main():
     message = {
         'message_type' : 'client_request',
-        'client_id' : 2,
-        'client_request_no' : 5,
+        'client_id' : 1,
+        'client_request_no' : 2,
         'value' : 'gtmd'
     } 
     data = json.dumps(message)
