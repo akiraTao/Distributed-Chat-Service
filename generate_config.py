@@ -56,7 +56,7 @@ def generate_config(f, manual, skip, prob):
         replicas[replica_id]['drop_rate'] = drop_rate
 
     # Write the config to config.json
-    config_file = 'config.json'
+    config_file = 'replica_config.json'
     with open(config_file, 'w') as config_handle:
         config_handle.write(json.dumps(config_data, indent=4))
 

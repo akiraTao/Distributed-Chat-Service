@@ -1,10 +1,13 @@
 #!/usr/env/bin python3
 
 import json
+import click
 import socket
 
 
-def main():
+@click.command()
+@click.argument('config_file')
+def main(config_file):
     message = {
         'message_type' : 'client_request',
         'client_id' : 1,
