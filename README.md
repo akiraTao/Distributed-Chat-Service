@@ -52,8 +52,7 @@
 {
     'message_type' : 'client_timeout',
     'client_id' : Int,
-    'client_request_no' : Int,
-    'value' : value
+    'client_request_no' : Int
 }
 
 {
@@ -65,5 +64,10 @@
 }
 
 {
+    'message_type' : 'new_leader_to_client'
+    'leader' : replica_id
+}
+{
     'message_type' : 'ack_client'
+    'request_number' : Int
 }
