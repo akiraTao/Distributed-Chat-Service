@@ -4,45 +4,59 @@ import json
 import time
 import click
 import socket
+from paxos_util import get_id
 
 
 def send_client_request(my_id, my_ip, my_port, replica_config):
-    # { request_no : message }
     # { replica_id : { 'ip' : '', 'port' : '' } }
-    t_replica_config = replica_config
+    replica_config = replica_config
 
     # Build the socket to receive external messages
     my_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     my_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     my_socket.bind((my_ip, my_port))
     my_socket.listen(5)
-    request_id = 0
-    leader_id = 0
 
+    # Every client retains its own sequence number
+    request_no = 0
+
+    # The id of the leader who I believe is the leader
+    leader_propose_no = [0, 0]
+
+    # The framework for client_request message
     message = {
         'message_type' : 'client_request',
         'client_id' : my_id,
+        'client_ip' : my_ip,
+        'client_port' : my_port,
+        # Only the two below are variables for a client
         'client_request_no' : request_no,
-        'value' : value
+        'value' : ''
     }
-    while 1:
-        # get user's message
-        message.value = input("Enter your message: ")
-        message.client_request_no = request_id
-        request_id += 1 
+
+    while True:
+        # Get user's message from command line
+        message['client_request_no'] = request_no
+        message['value'] = input('Enter your message: ')
+        request_no += 1
+
         data = json.dumps(message)
-        # send parsed messages to assuemed leader
-        sender_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        sender_socket.connect((t_replica_config[leader_id]['ip'], t_replica_config[leader_id]['port']))
-        sender_socket.sendall(str.encode(data))
-        sender_socket.close()
-        # accept reply from replicas
+        # Send parsed message to assumed leader
+        receiver_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        receiver_socket.connect((replica_config[get_id(leader_propose_no)]['ip'],
+                                 replica_config[get_id(leader_propose_no)]['port']))
+        receiver_socket.sendall(str.encode(data))
+        receiver_socket.close()
+
+        # Accept reply from replicas
+        # Start  recording the time for timeout
         time_recorder = time.time()
-        while 1:
+        while True:
+            data = None
             try:
-                # accept messages from replicas
+                # Accept message from replicas
                 sender_socket = my_socket.accept()[0]
-                sender_socket.sendtimeout(3)
+                sender_socket.settimeout(3)
                 data = sender_socket.recv(1024)
                 sender_socket.close()
 
@@ -51,60 +65,79 @@ def send_client_request(my_id, my_ip, my_port, replica_config):
                 timeout_message = {
                     'message_type' : 'client_timeout',
                     'client_id' : my_id,
-                    'client_request_no' : message.client_request_no 
+                    'client_request_no' : message['client_request_no'] 
                 }
                 data = json.dumps(timeout_message)
-                print('Client {} send timout message to all\n'.format(my_id))
-                for i in range(len(t_replica_config)): 
-                    sender_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                    sender_socket.connect((t_replica_config[i]['ip'], t_replica_config[i]['port']))
-                    sender_socket.sendall(str.encode(data))
-                    sender_socket.close()
+
+                print('Client {} send timeout message to all'.format(my_id))
+
+                for replica_addr in replica_config.values(): 
+                    receiver_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                    receiver_socket.connect((replica_addr['ip'], replica_addr['port']))
+                    receiver_socket.sendall(str.encode(data))
+                    receiver_socket.close()
+
+                # Reinitialize the timer
                 time_recorder = time.time()
+                continue
 
             reply_message = json.loads(data.decode('utf-8'))
             message_type = reply_message['message_type']
 
             if message_type == 'ack_client':
-                if reply_message['request_number'] == message['client_request_no']:
-                    print ('Message Recorded!\n')
+                if reply_message['request_no'] == message['client_request_no']:
+                    print ('Message Recorded!')
                     break
-                continue
-            elif message_type == 'new_leader_to_client'
-                leader_id = reply_message['leader']
+
+            elif message_type == 'new_leader_to_client':
+                leader_propose_no = reply_message['leader_propose_no']
+                leader_id = get_id(leader_propose_no)
                 # send messages to new leader
                 data = json.dumps(message)
                 # send parsed messages to assuemed leader
                 sender_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                sender_socket.connect((t_replica_config[leader_id]['ip'], t_replica_config[leader_id]['port']))
+                sender_socket.connect((replica_config[leader_id]['ip'], replica_config[leader_id]['port']))
                 sender_socket.sendall(str.encode(data))
                 sender_socket.close()
+
+                # Reinitialize the timer
                 time_recorder = time.time()
-                print ('Change client {}th leader to {}\n'.format(my_id, reply_message['leader']))
-            if time.time()-time_recorder >= 3:
+
+                print ('Change client {}th leader to {}'.format(my_id, reply_message['leader']))
+
+                continue
+
+            if (time.time() - time_recorder) >= 3:
                 # when timeout, send timeout messages to all
                 timeout_message = {
                     'message_type' : 'client_timeout',
                     'client_id' : my_id,
-                    'client_request_no' : message.client_request_no 
+                    'client_request_no' : message['client_request_no']
                 }
                 data = json.dumps(timeout_message)
+
                 print('Client {} send timout message to all'.format(my_id))
-                for i in range(len(t_replica_config)): 
-                    sender_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                    sender_socket.connect((t_replica_config[i]['ip'], t_replica_config[i]['port']))
-                    sender_socket.sendall(str.encode(data))
-                    sender_socket.close()
-                time_recorder = time.time()
+
+                for replica_addr in replica_config.values(): 
+                    receiver_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                    receiver_socket.connect((replica_addr['ip'], replica_addr['port']))
+                    receiver_socket.sendall(str.encode(data))
+                    receiver_socket.close()
+
+    # Close the socket for completeness
     my_socket.close()
 
 
 @click.command()
 @click.argument('client_id')
-@click.argument('client_request_file')
+@click.argument('my_ip')
+@click.argument('my_port')
 @click.argument('replica_config_file')
-def main(client_id, replica_config_file):
+def main(client_id, my_ip, my_port, replica_config_file):
+    # Convert to int which is required by repica_config
     my_id = int(client_id)
+    # Convert to int which is required by socket bind
+    my_port = int(my_port)
     # Read necessary information from config_file
     replica_config_file_handle = open(replica_config_file, 'r')
     replica_config_data = replica_config_file_handle.read()
@@ -119,9 +152,6 @@ def main(client_id, replica_config_file):
             'ip' : raw_config['ip'],
             'port' : raw_config['port']
         }
-
-    my_ip = 'localhost'
-    my_port = 8000
 
     send_client_request(my_id, my_ip, my_port, replica_config) 
 

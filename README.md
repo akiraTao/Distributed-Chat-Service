@@ -8,7 +8,8 @@
     'message_type' : 'ack_prepare',
     'accepted' : value,
     'proposer' : propose_no,
-    'client_request' : client_id.newest_request_id
+    'client_request' : client_id.newest_request_id,
+    'client_addr' : (ip, port),
     'no_more_accepted' : Bool,
     'slot' : slot_no
 }
@@ -18,6 +19,7 @@
     'to_accept' : value,
     'proposer'  : propose_no,
     'client_request' : client_id.newest_request_id,
+    'client_addr' : (ip, port),
     'first_unchosen' : first_unchosen_index,
     'slot': slot_no
 }
@@ -27,7 +29,33 @@
     'accepted' : value,
     'proposer'  : propose_no,
     'client_request' : client_id.newest_request_id,
+    'client_addr' : (ip, port),
     'slot' : slot_no
+}
+
+{
+    'message_type' : 'client_request',
+    'client_id' : Int,
+    'client_request_no' : Int,
+    'client_ip' : ip,
+    'client_port' : port,
+    'value' : value 
+}
+
+{
+    'message_type' : 'client_timeout',
+    'client_id' : Int,
+    'client_request_no' : Int
+}
+
+{
+    'message_type' : 'ack_client'
+    'request_no' : request_no
+}
+
+{
+    'message_type' : 'new_leader_to_client'
+    'leader_propose_no' : (round, leader_id)
 }
 
 {
@@ -43,31 +71,9 @@
 }
 
 {
-    'message_type' : 'client_request',
-    'client_id' : Int,
-    'client_request_no' : Int,
-    'value' : value 
-}
-
-{
-    'message_type' : 'client_timeout',
-    'client_id' : Int,
-    'client_request_no' : Int
-}
-
-{
     'message_type' : 'view_change',
     'client_id' : Int,
     'client_request_no' : Int,
     'message' : value,
     'new_proposer' : proposer_no
-}
-
-{
-    'message_type' : 'new_leader_to_client'
-    'leader' : replica_id
-}
-{
-    'message_type' : 'ack_client'
-    'request_number' : Int
 }

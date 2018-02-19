@@ -28,6 +28,7 @@ def paxos_prepare(propose_no,
 def paxos_ack_prepare(accepted_value, 
                       accepted_proposer,
                       accepted_client_request,
+                      accepted_client_addr,
                       no_more_accepted,
                       slot_no,
                       leader_id, 
@@ -38,6 +39,7 @@ def paxos_ack_prepare(accepted_value,
         'accepted' : accepted_value,
         'proposer' : accepted_proposer,
         'client_request' : accepted_client_request,
+        'client_addr' : accepted_client_addr,
         'no_more_accepted' : no_more_accepted,
         'slot' : slot_no
     }
@@ -53,6 +55,7 @@ def paxos_ack_prepare(accepted_value,
 def paxos_propose(value,
                   propose_no,
                   client_request,
+                  client_addr,
                   first_unchosen,
                   slot,
                   replica_config):
@@ -61,6 +64,7 @@ def paxos_propose(value,
         'to_accept' : value,
         'proposer' : propose_no,
         'client_request' : client_request,
+        'client_addr' : client_addr,
         'first_unchosen' : first_unchosen,
         'slot' : slot
     }
@@ -77,6 +81,7 @@ def paxos_propose(value,
 def paxos_accept(value,
                  propose_no,
                  client_request,
+                 client_addr,
                  slot,
                  replica_config):
     message = {
@@ -84,6 +89,7 @@ def paxos_accept(value,
         'accepted' : value,
         'proposer' : propose_no,
         'client_request' : client_request,
+        'client_addr' : client_addr,
         'slot' : slot
     }
     data = json.dumps(message).encode('utf-8')
@@ -93,3 +99,25 @@ def paxos_accept(value,
         receiver_socket.connect((replica_addr['ip'], replica_addr['port']))
         receiver_socket.sendall(data)
         receiver_socket.close()
+
+
+# This function is used by replicas to send ack to the client when the value is learned
+def paxos_ack_client(request_no,
+                     client_ip,
+                     client_port,
+                     replica_config):
+    message = {
+        'message_type' : 'ack_client',
+        'request_no' : request_no
+    }
+    data = json.dumps(message).encode('utf-8')
+
+    receiver_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    receiver_socket.connect((client_ip, client_port))
+    receiver_socket.sendall(data)
+    receiver_socket.close()
+
+
+# Returns the leader id of the replica
+def get_id(s_propose_no):
+    return s_propose_no[1]
