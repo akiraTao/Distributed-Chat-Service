@@ -54,7 +54,9 @@
 {
     'message_type' : 'client_timeout',
     'client_id' : my_id,
-    'client_request_no' : message['client_request_no'],
+    'client_ip' : my_ip,
+    'client_port' : my_port,
+    'client_request_no' : request_no,
     'propose_no' : leader_propose_no
 }
 
