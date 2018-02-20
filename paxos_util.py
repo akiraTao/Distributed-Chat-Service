@@ -1,54 +1,50 @@
 #!/usr/env/bin python3
+
 import json
 import socket
+
 
 # This function is used in Paxos prepare stage (leader -> replicas)
 # Two scenarios this may get called:
 #   1. In the very beginning of the protocol by default leader
 #   2. When the view changes new leader needs to prepare
 def paxos_prepare(propose_no,
-                  next_slot,
+                  slot,
                   replica_config):
     # Send 'propose' message to every other replica
     message = {
         'message_type' : 'prepare',
         'proposer' : propose_no,
-        'slot' : next_slot
+        'slot' : slot
     }
-    data = json.dumps(message).encode('utf-8')
 
-    for replica_id, replica_addr in replica_config.items():
-        receiver_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        receiver_socket.connect((replica_addr['ip'], replica_addr['port']))
-        receiver_socket.sendall(data)
-        receiver_socket.close()    
+    for replica_addr in replica_config.values():
+        send_message(message, replica_addr['ip'],
+                              replica_addr['port'])  
 
 
 # This function is used in Paxos prepare ack stage (replica -> leader)
-def paxos_ack_prepare(accepted_value, 
-                      accepted_proposer,
-                      accepted_client_request,
-                      accepted_client_addr,
+def paxos_ack_prepare(value,
+                      proposer,
+                      client_request,
+                      client_addr,
                       no_more_accepted,
                       slot_no,
-                      leader_id, 
+                      leader_id,
                       replica_config):
     # Send acknowledge to 'propose' message to the leader
     message = {
         'message_type' : 'ack_prepare',
-        'accepted' : accepted_value,
-        'proposer' : accepted_proposer,
-        'client_request' : accepted_client_request,
-        'client_addr' : accepted_client_addr,
+        'accepted' : value,
+        'proposer' : proposer,
+        'client_request' : client_request,
+        'client_addr' : client_addr,
         'no_more_accepted' : no_more_accepted,
         'slot' : slot_no
     }
-    data = json.dumps(message).encode('utf-8')
 
-    receiver_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    receiver_socket.connect((replica_config[leader_id]['ip'], replica_config[leader_id]['port']))
-    receiver_socket.sendall(data)
-    receiver_socket.close()
+    send_message(message, replica_config[leader_id]['ip'], 
+                          replica_config[leader_id]['port'])
 
 
 # This function is used in Paxos propose stage (leader -> replicas)
@@ -68,13 +64,10 @@ def paxos_propose(value,
         'first_unchosen' : first_unchosen,
         'slot' : slot
     }
-    data = json.dumps(message).encode('utf-8')
 
-    for replica_id, replica_addr in replica_config.items():
-        receiver_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        receiver_socket.connect((replica_addr['ip'], replica_addr['port']))
-        receiver_socket.sendall(data)
-        receiver_socket.close()  
+    for replica_addr in replica_config.values():
+        send_message(message, replica_addr['ip'],
+                              replica_addr['port']) 
 
 
 # This function is used in Paxos accept stage (replica -> replicas)
@@ -92,32 +85,41 @@ def paxos_accept(value,
         'client_addr' : client_addr,
         'slot' : slot
     }
-    data = json.dumps(message).encode('utf-8')
 
-    for replica_id, replica_addr in replica_config.items():
-        receiver_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        receiver_socket.connect((replica_addr['ip'], replica_addr['port']))
-        receiver_socket.sendall(data)
-        receiver_socket.close()
+    for replica_addr in replica_config.values():
+        send_message(message, replica_addr['ip'],
+                              replica_addr['port'])
 
 
 # This function is used by replicas to send ack to the client when the value is learned
+# client_addr[0]: ip, client_addr[1]: port
 def paxos_ack_client(request_no,
-                     client_ip,
-                     client_port,
-                     replica_config):
+                     client_addr):
     message = {
         'message_type' : 'ack_client',
         'request_no' : request_no
     }
-    data = json.dumps(message).encode('utf-8')
 
+    send_message(message, client_addr[0], 
+                          client_addr[1])
+
+
+# General routine for sending message to the receiver
+# receiver_addr[0]: ip, receiver_addr[1]: port
+def send_message(message_body,
+                 receiver_ip,
+                 receiver_port):
+    # Serialize message_body to proper format
+    data = json.dumps(message_body).encode('utf-8')
+
+    # Send the message
     receiver_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    receiver_socket.connect((client_ip, client_port))
+    receiver_socket.connect((receiver_ip, receiver_port))
     receiver_socket.sendall(data)
     receiver_socket.close()
 
 
 # Returns the leader id of the replica
-def get_id(s_propose_no):
-    return s_propose_no[1]
+# propose_no is a monotically increasing number containing the information of round
+def get_id(propose_no, replica_num):
+    return (propose_no % replica_num)
