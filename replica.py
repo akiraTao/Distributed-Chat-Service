@@ -14,7 +14,7 @@ from paxos_util import paxos_prepare, paxos_ack_prepare, paxos_propose,\
 
 def handle_replica(replica_id, replica_config_list):
     # Propose No. used when propose if I am leader
-    s_my_propose_no = 0
+    s_my_propose_no = replica_id
     # Propose No. used to see who is the current leader
     s_leader_propose_no = 0
     # Used by the leader. Possible states are 'prepare', 'established', 'dictated'
@@ -60,7 +60,7 @@ def handle_replica(replica_id, replica_config_list):
     c_replica_num = len(replica_config_list)
 
     # Majority number of replicas
-    c_majority_num = (replica_num + 1) / 2
+    c_majority_num = (c_replica_num + 1) / 2
 
     # The ip address and port information
     c_my_ip = s_replica_config[get_id(s_my_propose_no, c_replica_num)]['ip']
@@ -69,8 +69,7 @@ def handle_replica(replica_id, replica_config_list):
     # Build the socket to receive external messages
     my_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     my_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    my_socket.bind((s_replica_config[c_my_ip]['ip'],
-                    s_replica_config[c_my_port]['port']))
+    my_socket.bind((c_my_ip, c_my_port))
     my_socket.listen(5)
 
     # My own information is no longer needed
@@ -153,7 +152,7 @@ def handle_replica(replica_id, replica_config_list):
                               s_client_addr[proposed_slot],
                               no_more_accepted,
                               proposed_slot,
-                              get_id(s_leader_propose_no, replica_num),
+                              get_id(s_leader_propose_no, c_replica_num),
                               s_replica_config)
 
 
@@ -372,7 +371,7 @@ def handle_replica(replica_id, replica_config_list):
                             s_first_unchosen += 1
 
                     print('Replica {} done with slot {}, value {}'.\
-                        format(get_id(s_my_propose_no, replica_num), accept_slot, s_accepted[accept_slot]))
+                        format(get_id(s_my_propose_no, c_replica_num), accept_slot, s_accepted[accept_slot]))
 
                     paxos_ack_client(s_client_request[accept_slot][1],
                                      s_client_addr[accept_slot])

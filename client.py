@@ -4,12 +4,14 @@ import json
 import time
 import click
 import socket
-from paxos_util import get_id
+from paxos_util import paxos_client_request, get_id
 
 
 def send_client_request(my_id, my_ip, my_port, replica_config):
     # { replica_id : { 'ip' : '', 'port' : '' } }
     replica_config = replica_config
+
+    # Number of replicas
     replica_len = len(replica_config)
 
     # Build the socket to receive external messages
@@ -24,48 +26,38 @@ def send_client_request(my_id, my_ip, my_port, replica_config):
     # The id of the leader who I believe is the leader
     leader_propose_no = 0
 
-    # The framework for client_request message
-    message = {
-        'message_type' : 'client_request',
-        'client_id' : my_id,
-        'client_ip' : my_ip,
-        'client_port' : my_port,
-        # Only the two below are variables for a client
-        'client_request_no' : request_no,
-        'propose_no' : leader_propose_no,
-        'value' : ''
-    }
-
     while True:
-        # Get user's message from command line
+        # Let client choose what to do
         user_command = input('Enter your command\n (s) send messages, (p) print log, (e) end client: ')
+
         if user_command == 's':
-            message['client_request_no'] = request_no
-            message['value'] = input('Enter your message: ')
-            message['propose_no'] = leader_propose_no
-            request_no += 1
+            # Get user's message from command line
+            value = input('Enter your message: ')
 
-            data = json.dumps(message)
             # Send parsed message to assumed leader
-            receiver_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            receiver_socket.connect((replica_config[get_id(leader_propose_no, replica_len)]['ip'],
-                                     replica_config[get_id(leader_propose_no, replica_len)]['port']))
-            receiver_socket.sendall(str.encode(data))
-            receiver_socket.close()
+            paxos_client_request(my_id,
+                                 my_ip,
+                                 my_port,
+                                 request_no,
+                                 leader_propose_no,
+                                 value,
+                                 replica_config)
 
-            # Accept reply from replicas
-            # Start  recording the time for timeout
+            # Start recording the time for timeout
             time_recorder = time.time()
+
             while True:
                 data = None
                 try:
+                    print(1)
                     # Accept message from replicas
+                    my_socket.settimeout(3)
                     sender_socket = my_socket.accept()[0]
-                    sender_socket.settimeout(3)
                     data = sender_socket.recv(1024)
                     sender_socket.close()
 
                 except sender_socket.timeout:
+                    print(2)
                     # when timeout, send view change to all
                     timeout_message = {
                         'message_type' : 'client_timeout',
@@ -88,12 +80,18 @@ def send_client_request(my_id, my_ip, my_port, replica_config):
                     time_recorder = time.time()
                     continue
 
+                print(3)
+
                 reply_message = json.loads(data.decode('utf-8'))
                 message_type = reply_message['message_type']
 
                 if message_type == 'ack_client':
-                    if reply_message['request_no'] == message['client_request_no']:
+                    if reply_message['request_no'] == request_no:
                         print ('Message Recorded!')
+
+                        # Increment request_no for next request
+                        request_no += 1
+
                         break
 
                 elif message_type == 'new_leader_to_client':
@@ -111,7 +109,7 @@ def send_client_request(my_id, my_ip, my_port, replica_config):
                         sender_socket.close()
                         # Reinitialize the timer
                         time_recorder = time.time()
-                        print ('Change client {}th leader to {}'.format(my_id, get_id(reply_message['proposal_no'],replica_len))
+                        print ('Change client {}th leader to {}'.format(my_id, get_id(reply_message['proposal_no'],replica_len)))
                     continue
 
                 if (time.time() - time_recorder) >= 3:

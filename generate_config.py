@@ -18,7 +18,7 @@ def generate_config(f, manual, skip, prob):
     config_data['mode'] = 'manual' if (manual == True) else 'script' 
     config_data['replica_list'] = []
 
-    port_base = 6000
+    port_base = 8000
     replica_num = 2 * f + 1
     # Configure 2f+1 replica information
     for replica_id in range(replica_num):

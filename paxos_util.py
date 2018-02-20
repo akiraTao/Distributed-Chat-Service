@@ -25,22 +25,22 @@ def paxos_prepare(propose_no,
 
 # This function is used in Paxos prepare ack stage (replica -> leader)
 def paxos_ack_prepare(value,
-                      proposer,
+                      propose_no,
                       client_request,
                       client_addr,
                       no_more_accepted,
-                      slot_no,
+                      slot,
                       leader_id,
                       replica_config):
     # Send acknowledge to 'propose' message to the leader
     message = {
         'message_type' : 'ack_prepare',
         'accepted' : value,
-        'proposer' : proposer,
+        'proposer' : propose_no,
         'client_request' : client_request,
         'client_addr' : client_addr,
         'no_more_accepted' : no_more_accepted,
-        'slot' : slot_no
+        'slot' : slot
     }
 
     send_message(message, replica_config[leader_id]['ip'], 
@@ -102,6 +102,32 @@ def paxos_ack_client(request_no,
 
     send_message(message, client_addr[0], 
                           client_addr[1])
+
+
+# This function is used by client to send request to replicas 
+def paxos_client_request(my_id,
+                         my_ip,
+                         my_port,
+                         request_no,
+                         leader_propose_no,
+                         value,
+                         replica_config):
+
+    message = {
+        'message_type' : 'client_request',
+        'client_id' : my_id,
+        'client_ip' : my_ip,
+        'client_port' : my_port,
+        'client_request_no' : request_no,
+        'propose_no' : leader_propose_no,
+        'value' : value
+    }
+
+    replica_num = len(replica_config)
+    leader_id = get_id(leader_propose_no, replica_num)
+
+    send_message(message, replica_config[leader_id]['ip'],
+                          replica_config[leader_id]['port'])
 
 
 # General routine for sending message to the receiver
