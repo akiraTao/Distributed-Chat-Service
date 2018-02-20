@@ -35,18 +35,23 @@
 
 {
     'message_type' : 'client_request',
-    'client_id' : Int,
-    'client_request_no' : Int,
-    'client_ip' : ip,
-    'client_port' : port,
-    'value' : value 
+    'client_id' : my_id,
+    'client_ip' : my_ip,
+    'client_port' : my_port,
+    # Only the three below are variables for a client
+    'client_request_no' : request_no,
+    'propose_no' : leader_propose_no,
+    'value' : ''
 }
+
 
 {
     'message_type' : 'client_timeout',
-    'client_id' : Int,
-    'client_request_no' : Int
+    'client_id' : my_id,
+    'client_request_no' : message['client_request_no'],
+    'propose_no' : leader_propose_no
 }
+
 
 {
     'message_type' : 'ack_client'
@@ -56,6 +61,7 @@
 {
     'message_type' : 'new_leader_to_client'
     'leader_propose_no' : (round, leader_id)
+    'propose_no' : Int
 }
 
 {
