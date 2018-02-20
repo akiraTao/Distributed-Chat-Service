@@ -130,6 +130,23 @@ def paxos_client_request(my_id,
                           replica_config[leader_id]['port'])
 
 
+# This function is used by client to send timeout to replicas
+def paxos_client_timeout(my_id,
+                         request_no,
+                         leader_propose_no,
+                         replica_config)
+    message = {
+        'message_type' : 'client_timeout',
+        'client_id' : my_id,
+        'client_request_no' : request_no,
+        'propose_no' : leader_propose_no
+    }
+
+    for replica_addr in replica_config.values():
+        send_message(message, replica_addr['ip'],
+                              replica_addr['port'])
+
+
 # General routine for sending message to the receiver
 # receiver_addr[0]: ip, receiver_addr[1]: port
 def send_message(message_body,

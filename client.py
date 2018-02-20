@@ -4,7 +4,8 @@ import json
 import time
 import click
 import socket
-from paxos_util import paxos_client_request, get_id
+from paxos_util import paxos_client_request, paxos_client_timeout,
+                       get_id
 
 
 def send_client_request(my_id, my_ip, my_port, replica_config):
@@ -48,87 +49,71 @@ def send_client_request(my_id, my_ip, my_port, replica_config):
 
             while True:
                 data = None
+
                 try:
-                    print(1)
                     # Accept message from replicas
                     my_socket.settimeout(3)
                     sender_socket = my_socket.accept()[0]
                     data = sender_socket.recv(1024)
                     sender_socket.close()
 
-                except sender_socket.timeout:
-                    print(2)
-                    # when timeout, send view change to all
-                    timeout_message = {
-                        'message_type' : 'client_timeout',
-                        'client_id' : my_id,
-                        'client_request_no' : message['client_request_no'],
-                        'propose_no' : leader_propose_no
-                    }
-
-                    data = json.dumps(timeout_message)
-
+                except my_socket.timeout:
                     print('Client {} send timeout message to all'.format(my_id))
 
-                    for replica_addr in replica_config.values(): 
-                        receiver_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                        receiver_socket.connect((replica_addr['ip'], replica_addr['port']))
-                        receiver_socket.sendall(str.encode(data))
-                        receiver_socket.close()
+                    # when timeout, send timeout messages to all
+                    paxos_client_timeout(my_id,
+                                         request_no,
+                                         leader_propose_no,
+                                         replica_config)
 
                     # Reinitialize the timer
                     time_recorder = time.time()
                     continue
 
-                print(3)
-
                 reply_message = json.loads(data.decode('utf-8'))
+                
                 message_type = reply_message['message_type']
 
                 if message_type == 'ack_client':
                     if reply_message['request_no'] == request_no:
                         print ('Message Recorded!')
-
                         # Increment request_no for next request
                         request_no += 1
-
                         break
 
                 elif message_type == 'new_leader_to_client':
-                    leader_propose_no = reply_message['leader_propose_no']
-                    if reply_message['propose_no'] > leader_propose_no:
+                    print('Change client {}th leader to {}'.\
+                        format(my_id, get_id(reply_message['propose_no'],replica_len)))
+
+                    # This is the propose_no of new leader
+                    new_leader_propose_no = reply_message['propose_no']
+
+                    if new_leader_propose_no > leader_propose_no:
                         # prepare message and destination to be resent
-                        leader_propse_no = reply_message['propose_no']
-                        leader_id = get_id(leader_propose_no, replica_len)
-                        message['propose_no'] = leader_propose_no
-                        data = json.dumps(message)
-                        # send parsed messages to assuemed leader
-                        sender_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                        sender_socket.connect((replica_config[leader_id]['ip'], replica_config[leader_id]['port']))
-                        sender_socket.sendall(str.encode(data))
-                        sender_socket.close()
+                        leader_propose_no = new_leader_propose_no
+
+                        # Resend the client request
+                        paxos_client_request(my_id,
+                                             my_ip,
+                                             my_port,
+                                             request_no,
+                                             leader_propose_no,
+                                             value)
+
                         # Reinitialize the timer
                         time_recorder = time.time()
-                        print ('Change client {}th leader to {}'.format(my_id, get_id(reply_message['proposal_no'],replica_len)))
+
                     continue
 
                 if (time.time() - time_recorder) >= 3:
-                    # when timeout, send timeout messages to all
-                    timeout_message = {
-                        'message_type' : 'client_timeout',
-                        'client_id' : my_id,
-                        'client_request_no' : message['client_request_no'],
-                        'propose_no' : leader_propose_no
-                    }
-                    data = json.dumps(timeout_message)
-
                     print('Client {} send timout message to all'.format(my_id))
 
-                    for replica_addr in replica_config.values(): 
-                        receiver_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                        receiver_socket.connect((replica_addr['ip'], replica_addr['port']))
-                        receiver_socket.sendall(str.encode(data))
-                        receiver_socket.close()
+                    # when timeout, send timeout messages to all
+                    paxos_client_timeout(my_id,
+                                         request_no,
+                                         leader_propose_no,
+                                         replica_config)
+
         if user_command == 'e':
             break
 

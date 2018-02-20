@@ -60,10 +60,19 @@
 
 
 {
-    'message_type' : 'new_leader_to_client'
-    'leader_propose_no' : (round, leader_id)
-    'propose_no' : Int
+    'message_type' : 'new_leader_to_client',
+    'propose_no' : new_leader_propose_no
 }
+
+
+
+
+
+
+
+
+
+
 
 {
     'message_type' : 'help_me_choose',
