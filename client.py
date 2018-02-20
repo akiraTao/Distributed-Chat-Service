@@ -4,7 +4,7 @@ import json
 import time
 import click
 import socket
-from paxos_util import paxos_client_request, paxos_client_timeout,
+from paxos_util import paxos_client_request, paxos_client_timeout,\
                        get_id
 
 
@@ -51,13 +51,15 @@ def send_client_request(my_id, my_ip, my_port, replica_config):
                 data = None
 
                 try:
+                    print(2)
                     # Accept message from replicas
                     my_socket.settimeout(3)
                     sender_socket = my_socket.accept()[0]
+                    print(3)
                     data = sender_socket.recv(1024)
                     sender_socket.close()
 
-                except my_socket.timeout:
+                except socket.timeout:
                     print('Client {} send timeout message to all'.format(my_id))
 
                     # when timeout, send timeout messages to all
@@ -65,14 +67,16 @@ def send_client_request(my_id, my_ip, my_port, replica_config):
                                          request_no,
                                          leader_propose_no,
                                          replica_config)
+                    print(1)
 
                     # Reinitialize the timer
                     time_recorder = time.time()
                     continue
 
                 reply_message = json.loads(data.decode('utf-8'))
-                
+
                 message_type = reply_message['message_type']
+                print(message_type)
 
                 if message_type == 'ack_client':
                     if reply_message['request_no'] == request_no:
@@ -113,6 +117,9 @@ def send_client_request(my_id, my_ip, my_port, replica_config):
                                          request_no,
                                          leader_propose_no,
                                          replica_config)
+
+                    # Reinitialize the timer
+                    time_recorder = time.time()
 
         if user_command == 'e':
             break

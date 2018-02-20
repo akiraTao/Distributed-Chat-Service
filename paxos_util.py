@@ -134,7 +134,7 @@ def paxos_client_request(my_id,
 def paxos_client_timeout(my_id,
                          request_no,
                          leader_propose_no,
-                         replica_config)
+                         replica_config):
     message = {
         'message_type' : 'client_timeout',
         'client_id' : my_id,
@@ -142,9 +142,13 @@ def paxos_client_timeout(my_id,
         'propose_no' : leader_propose_no
     }
 
+    print('timeout start')
+
     for replica_addr in replica_config.values():
         send_message(message, replica_addr['ip'],
                               replica_addr['port'])
+
+    print('timeout done')
 
 
 # General routine for sending message to the receiver
@@ -156,10 +160,13 @@ def send_message(message_body,
     data = json.dumps(message_body).encode('utf-8')
 
     # Send the message
-    receiver_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    receiver_socket.connect((receiver_ip, receiver_port))
-    receiver_socket.sendall(data)
-    receiver_socket.close()
+    try:
+        receiver_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        receiver_socket.connect((receiver_ip, receiver_port))
+        receiver_socket.sendall(data)
+        receiver_socket.close()
+    except Exception:
+        print('connection refused port: {}'.format(receiver_port))
 
 
 # Returns the leader id of the replica
