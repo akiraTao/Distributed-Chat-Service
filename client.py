@@ -111,7 +111,7 @@ def send_client_request(my_id, my_ip, my_port, replica_config):
                         sender_socket.close()
                         # Reinitialize the timer
                         time_recorder = time.time()
-                        print ('Change client {}th leader to {}'.format(my_id, get_id(reply_message['proposal_no'],replica_len))
+                        print ('Change client {}th leader to {}'.format(my_id, get_id(reply_message['proposal_no'],replica_len)))
                     continue
 
                 if (time.time() - time_recorder) >= 3:
@@ -125,7 +125,6 @@ def send_client_request(my_id, my_ip, my_port, replica_config):
                     data = json.dumps(timeout_message)
 
                     print('Client {} send timout message to all'.format(my_id))
-
                     for replica_addr in replica_config.values(): 
                         receiver_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                         receiver_socket.connect((replica_addr['ip'], replica_addr['port']))
