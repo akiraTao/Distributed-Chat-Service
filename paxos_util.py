@@ -1,13 +1,15 @@
 #!/usr/env/bin python3
 
+'''
+    The functions prepended by paxos_ are the ones involving message delivery
+    during the protocol. The functions prepended by u_ are general utilities.
+'''
+
 import json
 import socket
-
+ 
 
 # This function is used in Paxos prepare stage (leader -> replicas)
-# Two scenarios this may get called:
-#   1. In the very beginning of the protocol by default leader
-#   2. When the view changes new leader needs to prepare
 def paxos_prepare(propose_no,
                   slot,
                   replica_config):
@@ -124,7 +126,7 @@ def paxos_client_request(my_id,
     }
 
     replica_num = len(replica_config)
-    leader_id = get_id(leader_propose_no, replica_num)
+    leader_id = u_get_id(leader_propose_no, replica_num)
 
     send_message(message, replica_config[leader_id]['ip'],
                           replica_config[leader_id]['port'])
@@ -180,5 +182,5 @@ def send_message(message_body,
 
 # Returns the leader id of the replica
 # propose_no is a monotically increasing number containing the information of round
-def get_id(propose_no, replica_num):
+def u_get_id(propose_no, replica_num):
     return (propose_no % replica_num)

@@ -10,7 +10,7 @@ from multiprocessing import Process
 from collections import OrderedDict
 from paxos_util import paxos_prepare, paxos_ack_prepare, paxos_propose,\
                        paxos_accept, paxos_ack_client, paxos_tell_client_new_leader,\
-                       get_id
+                       u_get_id
 
 
 def handle_replica(replica_id, replica_config_list):
@@ -86,7 +86,7 @@ def handle_replica(replica_id, replica_config_list):
     s_waiting_client = False
 
     # If I am the leader at the very beginning
-    if get_id(s_leader_propose_no, c_replica_num) == replica_id:
+    if u_get_id(s_leader_propose_no, c_replica_num) == replica_id:
         # TODO: This is to ensure every other process is up (not safe)
         sys.exit(1)
         # time.sleep(10000000)
@@ -153,7 +153,7 @@ def handle_replica(replica_id, replica_config_list):
                               s_client_addr[proposed_slot],
                               no_more_accepted,
                               proposed_slot,
-                              get_id(s_leader_propose_no, c_replica_num),
+                              u_get_id(s_leader_propose_no, c_replica_num),
                               s_replica_config)
 
 
@@ -166,7 +166,7 @@ def handle_replica(replica_id, replica_config_list):
             acked_slot = message['slot'] 
 
             # If I am not the leader or the round number is old, ignore the message
-            if get_id(s_leader_propose_no, c_replica_num) != replica_id:
+            if u_get_id(s_leader_propose_no, c_replica_num) != replica_id:
                 continue
 
             # TODO: Check whether the proposer of ack_prepare is the leader itself (need to change JSON)
@@ -354,7 +354,7 @@ def handle_replica(replica_id, replica_config_list):
                 # If the acceptor didn't get propose message but get accept message:
                 if (accept_slot not in s_accept_msg_count) or (accept_propose_no > s_proposer[accept_slot]):
                     # This should not happen when I am leader
-                    assert ( get_id(s_leader_propose_no, c_replica_num) != replica_id ) 
+                    assert ( u_get_id(s_leader_propose_no, c_replica_num) != replica_id ) 
 
                     s_accepted[accept_slot] = accept_value
                     s_proposer[accept_slot] = accept_propose_no
@@ -394,7 +394,7 @@ def handle_replica(replica_id, replica_config_list):
                                      s_client_addr[accept_slot])
 
                     # If I am the leader, potentially need to process another message
-                    if get_id(s_leader_propose_no, c_replica_num) == replica_id:
+                    if u_get_id(s_leader_propose_no, c_replica_num) == replica_id:
 
                         # 'dictate' state means no need for prepare
                         # Now s_next_slot is independent of s_first_unchosen
@@ -570,7 +570,7 @@ def handle_replica(replica_id, replica_config_list):
                                          client_port)
 
             # If I happened to be the new leader
-            if get_id(s_leader_propose_no, c_replica_num) == replica_id:
+            if u_get_id(s_leader_propose_no, c_replica_num) == replica_id:
                 # Initialize temp variables with leader's own slot
                 t_value = s_accepted.get(s_next_slot, None)
                 t_propose_no = s_proposer.get(s_next_slot, [0, 0])

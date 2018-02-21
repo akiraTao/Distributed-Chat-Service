@@ -4,30 +4,28 @@ import json
 import time
 import click
 import socket
-from paxos_util import paxos_client_request, paxos_client_timeout,\
-                       get_id
+from paxos_util import paxos_client_request, paxos_client_timeout, u_get_id
 
 
 def send_client_request(my_id, my_ip, my_port, replica_config):
-    # { replica_id : { 'ip' : '', 'port' : '' } }
-    replica_config = replica_config
+    '''The actual client request execution interface.'''
 
+    # { replica_id : { 'ip' : '', 'port' : '' } }
+    s_replica_config = replica_config
     # Number of replicas
-    replica_len = len(replica_config)
+    s_replica_num = len(s_replica_config)
+    # Every client retains its own request sequence number
+    s_request_no = 0
+    # The id of the leader who I believe is the leader
+    s_leader_propose_no = 0
 
     # Build the socket to receive external messages
     my_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     my_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     my_socket.bind((my_ip, my_port))
 
-    # TODO: Client timeout should be dynamic
+    # TODO: Client timeout should be dynamic or increasing
     my_socket.settimeout(5)
-
-    # Every client retains its own sequence number
-    request_no = 0
-
-    # The id of the leader who I believe is the leader
-    leader_propose_no = 0
 
     while True:
         # Let client choose what to do
@@ -41,10 +39,10 @@ def send_client_request(my_id, my_ip, my_port, replica_config):
             paxos_client_request(my_id,
                                  my_ip,
                                  my_port,
-                                 request_no,
-                                 leader_propose_no,
+                                 s_request_no,
+                                 s_leader_propose_no,
                                  value,
-                                 replica_config)
+                                 s_replica_config)
 
             # Start recording the time for timeout
             time_recorder = time.time()
@@ -64,9 +62,9 @@ def send_client_request(my_id, my_ip, my_port, replica_config):
                     paxos_client_timeout(my_id,
                                          my_ip,
                                          my_port,
-                                         request_no,
-                                         leader_propose_no,
-                                         replica_config)
+                                         s_request_no,
+                                         s_leader_propose_no,
+                                         s_replica_config)
 
                     # Reinitialize the timer
                     time_recorder = time.time()
@@ -77,30 +75,30 @@ def send_client_request(my_id, my_ip, my_port, replica_config):
                 message_type = reply_message['message_type']
 
                 if message_type == 'ack_client':
-                    if reply_message['request_no'] == request_no:
+                    if reply_message['request_no'] == s_request_no:
                         print ('Message Recorded!')
                         # Increment request_no for next request
-                        request_no += 1
+                        s_request_no += 1
                         break
 
                 elif message_type == 'new_leader_to_client':
                     # This is the propose_no of new leader
                     new_leader_propose_no = reply_message['propose_no']
 
-                    if new_leader_propose_no > leader_propose_no:
+                    if new_leader_propose_no > s_leader_propose_no:
                         print('Change client {}th leader to {}'.\
-                            format(my_id, get_id(reply_message['propose_no'],replica_len)))
+                            format(my_id, u_get_id(reply_message['propose_no'],s_replica_num)))
                         # prepare message and destination to be resent
-                        leader_propose_no = new_leader_propose_no
+                        s_leader_propose_no = new_leader_propose_no
 
                         # Resend the client request
                         paxos_client_request(my_id,
                                              my_ip,
                                              my_port,
-                                             request_no,
-                                             leader_propose_no,
+                                             s_request_no,
+                                             s_leader_propose_no,
                                              value,
-                                             replica_config)
+                                             s_replica_config)
 
                         # Reinitialize the timer
                         time_recorder = time.time()
@@ -114,9 +112,9 @@ def send_client_request(my_id, my_ip, my_port, replica_config):
                     paxos_client_timeout(my_id,
                                          my_ip,
                                          my_port,
-                                         request_no,
-                                         leader_propose_no,
-                                         replica_config)
+                                         s_request_no,
+                                         s_leader_propose_no,
+                                         s_replica_config)
 
                     # Reinitialize the timer
                     time_recorder = time.time()
@@ -134,6 +132,8 @@ def send_client_request(my_id, my_ip, my_port, replica_config):
 @click.argument('my_port')
 @click.argument('replica_config_file')
 def main(client_id, my_ip, my_port, replica_config_file):
+    '''Main function is used for data preprocessing.'''
+
     # Convert to int which is required by repica_config
     my_id = int(client_id)
     # Convert to int which is required by socket bind
@@ -145,7 +145,7 @@ def main(client_id, my_ip, my_port, replica_config_file):
 
     replica_config_list = json.loads(replica_config_data).get('replica_list')
 
-    # { replica_id : { 'ip' : '', 'port' : '' } }
+    # Desired format is: { replica_id : { 'ip' : '', 'port' : '' } }
     replica_config = {}
     for raw_config in replica_config_list:
         replica_config[raw_config['id']] = {
@@ -153,6 +153,7 @@ def main(client_id, my_ip, my_port, replica_config_file):
             'port' : raw_config['port']
         }
 
+    # Call the actual client request execution
     send_client_request(my_id, my_ip, my_port, replica_config) 
 
 
