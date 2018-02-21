@@ -172,15 +172,10 @@ def send_message(message_body,
     # Serialize message_body to proper format
     data = json.dumps(message_body).encode('utf-8')
 
-    # Send the message
-    try:
-        receiver_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        receiver_socket.settimeout(0.1)
-        receiver_socket.connect((receiver_ip, receiver_port))
-        receiver_socket.sendall(data)
-        receiver_socket.close()
-    except Exception:
-        print('connection refused port: {}'.format(receiver_port))
+    # Send the message using UDP socket for non-blocking
+    receiver_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    receiver_socket.sendto(data, (receiver_ip, receiver_port))
+    receiver_socket.close()
 
 
 # Returns the leader id of the replica

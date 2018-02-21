@@ -16,10 +16,11 @@ def send_client_request(my_id, my_ip, my_port, replica_config):
     replica_len = len(replica_config)
 
     # Build the socket to receive external messages
-    my_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    my_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     my_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     my_socket.bind((my_ip, my_port))
-    my_socket.listen(5)
+
+    # TODO: Client timeout should be dynamic
     my_socket.settimeout(5)
 
     # Every client retains its own sequence number
@@ -53,12 +54,8 @@ def send_client_request(my_id, my_ip, my_port, replica_config):
 
                 try:
                     # Accept message from replicas
-                    sender_socket = my_socket.accept()[0]
-                    data = sender_socket.recv(1024)
-                    print('hhhhhhhhhhhh', data)
-                    if data == b'':
-                        continue
-                    sender_socket.close()
+                    # This is a blocking call, but the client has been set timeout
+                    data = my_socket.recvfrom(1024)[0]
 
                 except socket.timeout:
                     print('Client {} send timeout message to all'.format(my_id))

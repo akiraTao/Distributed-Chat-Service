@@ -65,12 +65,11 @@ def handle_replica(replica_id, replica_config_list):
     c_my_ip = s_replica_config[replica_id]['ip']
     c_my_port = s_replica_config[replica_id]['port']
 
-    # Build the socket to receive external messages
-    my_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    # Build the socket to receive external message
+    # UDP socket also has buffer to store incoming messages
+    my_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     my_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     my_socket.bind((c_my_ip, c_my_port))
-    my_socket.listen(5)
-    my_socket.settimeout(0.1)
 
     # My own information is no longer needed
     del s_replica_config[replica_id]
@@ -89,8 +88,8 @@ def handle_replica(replica_id, replica_config_list):
     # If I am the leader at the very beginning
     if get_id(s_leader_propose_no, c_replica_num) == replica_id:
         # TODO: This is to ensure every other process is up (not safe)
-        # time.sleep(1000000)
-        time.sleep(10000000)
+        sys.exit(1)
+        # time.sleep(10000000)
 
         # Initialize temp variables with leader's own slot
         t_value = s_accepted.get(s_next_slot, None)
@@ -112,18 +111,14 @@ def handle_replica(replica_id, replica_config_list):
     # This basically constantly fetched the next message in the socket
     #   buffer and take action according to the message type
     while True:
-        try:
-            sender_socket = my_socket.accept()[0]
-            data = sender_socket.recv(1024)
-            sender_socket.close()
-
-        except Exception:
-            continue
+        # This is a blocking call
+        data = my_socket.recvfrom(1024)[0]
 
         message = json.loads(data.decode('utf-8'))
         message_type = message['message_type']
 
-        print(replica_id, message_type)
+        # Debugging message
+        # print(replica_id, message_type)
 
         if message_type == 'prepare':
             proposed_no = message['proposer']
@@ -553,6 +548,7 @@ def handle_replica(replica_id, replica_config_list):
                     s_next_slot += 1
 
                 else:
+                    # Other state is not expected
                     print('invalid state {}'.format(s_leader_state))
                     sys.exit(1)
 
