@@ -21,8 +21,8 @@ def paxos_prepare(propose_no,
     }
 
     for replica_addr in replica_config.values():
-        send_message(message, replica_addr['ip'],
-                              replica_addr['port'])  
+        u_send_message(message, replica_addr['ip'],
+                                replica_addr['port'])  
 
 
 # This function is used in Paxos prepare ack stage (replica -> leader)
@@ -45,8 +45,8 @@ def paxos_ack_prepare(value,
         'slot' : slot
     }
 
-    send_message(message, replica_config[leader_id]['ip'], 
-                          replica_config[leader_id]['port'])
+    u_send_message(message, replica_config[leader_id]['ip'], 
+                            replica_config[leader_id]['port'])
 
 
 # This function is used in Paxos propose stage (leader -> replicas)
@@ -68,8 +68,8 @@ def paxos_propose(value,
     }
 
     for replica_addr in replica_config.values():
-        send_message(message, replica_addr['ip'],
-                              replica_addr['port']) 
+        u_send_message(message, replica_addr['ip'],
+                                replica_addr['port']) 
 
 
 # This function is used in Paxos accept stage (replica -> replicas)
@@ -89,8 +89,8 @@ def paxos_accept(value,
     }
 
     for replica_addr in replica_config.values():
-        send_message(message, replica_addr['ip'],
-                              replica_addr['port'])
+        u_send_message(message, replica_addr['ip'],
+                                replica_addr['port'])
 
 
 # This function is used by replicas to send ack to the client when the value is learned
@@ -102,8 +102,8 @@ def paxos_ack_client(request_no,
         'request_no' : request_no
     }
 
-    send_message(message, client_addr[0], 
-                          client_addr[1])
+    u_send_message(message, client_addr[0], 
+                            client_addr[1])
 
 
 # This function is used by client to send request to replicas 
@@ -128,8 +128,8 @@ def paxos_client_request(my_id,
     replica_num = len(replica_config)
     leader_id = u_get_id(leader_propose_no, replica_num)
 
-    send_message(message, replica_config[leader_id]['ip'],
-                          replica_config[leader_id]['port'])
+    u_send_message(message, replica_config[leader_id]['ip'],
+                            replica_config[leader_id]['port'])
 
 
 # This function is used by client to send timeout to replicas
@@ -149,8 +149,8 @@ def paxos_client_timeout(my_id,
     }
 
     for replica_addr in replica_config.values():
-        send_message(message, replica_addr['ip'],
-                              replica_addr['port'])
+        u_send_message(message, replica_addr['ip'],
+                                replica_addr['port'])
 
 
 # This function is used by replicas to tell the client the new leader
@@ -162,15 +162,14 @@ def paxos_tell_client_new_leader(propose_no,
         'propose_no' : propose_no
     }
 
-    send_message(message, client_ip,
-                          client_port)
+    u_send_message(message, client_ip,
+                            client_port)
 
 
 # General routine for sending message to the receiver
-# receiver_addr[0]: ip, receiver_addr[1]: port
-def send_message(message_body,
-                 receiver_ip,
-                 receiver_port):
+def u_send_message(message_body,
+                   receiver_ip,
+                   receiver_port):
     # Serialize message_body to proper format
     data = json.dumps(message_body).encode('utf-8')
 
@@ -181,6 +180,6 @@ def send_message(message_body,
 
 
 # Returns the leader id of the replica
-# propose_no is a monotically increasing number containing the information of round
+# propose_no is a monotically increasing number containing the round info
 def u_get_id(propose_no, replica_num):
     return (propose_no % replica_num)

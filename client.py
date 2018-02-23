@@ -25,11 +25,13 @@ def send_client_request(my_id, my_ip, my_port, replica_config):
     my_socket.bind((my_ip, my_port))
 
     # TODO: Client timeout should be dynamic or increasing
-    my_socket.settimeout(5)
+    my_socket.settimeout(3)
 
     while True:
+        command_str = 'Enter your command' + '\n' +\
+                      '(s) send message, (p) print log, (e) end client: '
         # Let client choose what to do
-        user_command = input('Enter your command\n (s) send messages, (p) print log, (e) end client: ')
+        user_command = input(command_str)
 
         if user_command == 's':
             # Get user's message from command line
@@ -52,7 +54,7 @@ def send_client_request(my_id, my_ip, my_port, replica_config):
 
                 try:
                     # Accept message from replicas
-                    # This is a blocking call, but the client has been set timeout
+                    # This is a blocking call, but the client has set timeout
                     data = my_socket.recvfrom(1024)[0]
 
                 except socket.timeout:
@@ -85,24 +87,26 @@ def send_client_request(my_id, my_ip, my_port, replica_config):
                     # This is the propose_no of new leader
                     new_leader_propose_no = reply_message['propose_no']
 
-                    if new_leader_propose_no > s_leader_propose_no:
-                        print('Change client {}th leader to {}'.\
-                            format(my_id, u_get_id(reply_message['propose_no'],s_replica_num)))
-                        # prepare message and destination to be resent
-                        s_leader_propose_no = new_leader_propose_no
+                    # By the construction of the protocol, this must hold true
+                    assert( new_leader_propose_no > s_leader_propose_no )
 
-                        # Resend the client request
-                        paxos_client_request(my_id,
-                                             my_ip,
-                                             my_port,
-                                             s_request_no,
-                                             s_leader_propose_no,
-                                             value,
-                                             s_replica_config)
+                    print('Change client {}\'s leader to {}'.\
+                          format(my_id, u_get_id(new_leader_propose_no,
+                                                 s_replica_num)))
+                    # prepare message and destination to be resent
+                    s_leader_propose_no = new_leader_propose_no
 
-                        # Reinitialize the timer
-                        time_recorder = time.time()
+                    # Resend the client request
+                    paxos_client_request(my_id,
+                                         my_ip,
+                                         my_port,
+                                         s_request_no,
+                                         s_leader_propose_no,
+                                         value,
+                                         s_replica_config)
 
+                    # Reinitialize the timer
+                    time_recorder = time.time()
                     continue
 
                 if (time.time() - time_recorder) >= 3:
@@ -119,7 +123,7 @@ def send_client_request(my_id, my_ip, my_port, replica_config):
                     # Reinitialize the timer
                     time_recorder = time.time()
 
-        if user_command == 'e':
+        elif user_command == 'e':
             break
 
     # Close the socket for completeness
