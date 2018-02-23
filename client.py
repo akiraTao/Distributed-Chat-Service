@@ -18,6 +18,8 @@ def send_client_request(my_id, my_ip, my_port, replica_config):
     s_request_no = 0
     # The id of the leader who I believe is the leader
     s_leader_propose_no = 0
+    # Initial timeout time
+    time_gap = 1
 
     # Build the socket to receive external messages
     my_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -25,7 +27,7 @@ def send_client_request(my_id, my_ip, my_port, replica_config):
     my_socket.bind((my_ip, my_port))
 
     # TODO: Client timeout should be dynamic or increasing
-    my_socket.settimeout(3)
+    my_socket.settimeout(time_gap)
 
     while True:
         command_str = 'Enter your command' + '\n' +\
@@ -59,7 +61,9 @@ def send_client_request(my_id, my_ip, my_port, replica_config):
 
                 except socket.timeout:
                     print('Client {} send timeout message to all'.format(my_id))
-
+                    print('Client {} increases its timeout time')
+                    time_gap += 0.1
+                    # when timeout, increase 
                     # when timeout, send timeout messages to all
                     paxos_client_timeout(my_id,
                                          my_ip,
@@ -88,30 +92,31 @@ def send_client_request(my_id, my_ip, my_port, replica_config):
                     new_leader_propose_no = reply_message['propose_no']
 
                     # By the construction of the protocol, this must hold true
-                    assert( new_leader_propose_no > s_leader_propose_no )
+                    if new_leader_propose_no > s_leader_propose_no:
 
-                    print('Change client {}\'s leader to {}'.\
-                          format(my_id, u_get_id(new_leader_propose_no,
-                                                 c_replica_num)))
-                    # prepare message and destination to be resent
-                    s_leader_propose_no = new_leader_propose_no
+                        print('Change client {}\'s leader to {}'.\
+                              format(my_id, u_get_id(new_leader_propose_no,
+                                                     c_replica_num)))
+                        # prepare message and destination to be resent
+                        s_leader_propose_no = new_leader_propose_no
 
-                    # Resend the client request
-                    paxos_client_request(my_id,
-                                         my_ip,
-                                         my_port,
-                                         s_request_no,
-                                         s_leader_propose_no,
-                                         value,
-                                         s_replica_config)
+                        # Resend the client request
+                        paxos_client_request(my_id,
+                                             my_ip,
+                                             my_port,
+                                             s_request_no,
+                                             s_leader_propose_no,
+                                             value,
+                                             s_replica_config)
 
-                    # Reinitialize the timer
-                    time_recorder = time.time()
-                    continue
+                        # Reinitialize the timer
+                        time_recorder = time.time()
+                        continue
 
-                if (time.time() - time_recorder) >= 3:
+                if (time.time() - time_recorder) >= time_gap:
                     print('Client {} send timout message to all'.format(my_id))
-
+                    print('Client {} increases its timeout time')
+                    time_gap += 0.1
                     # when timeout, send timeout messages to all
                     paxos_client_timeout(my_id,
                                          my_ip,
