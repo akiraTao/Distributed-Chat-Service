@@ -13,7 +13,7 @@ def send_client_request(my_id, my_ip, my_port, replica_config):
     # { replica_id : { 'ip' : '', 'port' : '' } }
     s_replica_config = replica_config
     # Number of replicas
-    s_replica_num = len(s_replica_config)
+    c_replica_num = len(s_replica_config)
     # Every client retains its own request sequence number
     s_request_no = 0
     # The id of the leader who I believe is the leader
@@ -92,7 +92,7 @@ def send_client_request(my_id, my_ip, my_port, replica_config):
 
                     print('Change client {}\'s leader to {}'.\
                           format(my_id, u_get_id(new_leader_propose_no,
-                                                 s_replica_num)))
+                                                 c_replica_num)))
                     # prepare message and destination to be resent
                     s_leader_propose_no = new_leader_propose_no
 
