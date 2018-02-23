@@ -88,8 +88,8 @@ def handle_replica(replica_id, replica_config_list):
     # If I am the leader at the very beginning
     if u_get_id(s_leader_propose_no, c_replica_num) == replica_id:
         # TODO: This is to ensure every other process is up (not safe)
-        sys.exit(1)
-        # time.sleep(10000000)
+        time.sleep(1)
+        # sys.exit(1)
 
         # Initialize temp variables with leader's own slot
         t_value = s_accepted.get(s_next_slot, None)

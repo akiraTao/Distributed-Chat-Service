@@ -87,27 +87,25 @@ def send_client_request(my_id, my_ip, my_port, replica_config):
                     # This is the propose_no of new leader
                     new_leader_propose_no = reply_message['propose_no']
 
-                    # By the construction of the protocol, this must hold true
-                    assert( new_leader_propose_no > s_leader_propose_no )
+                    if new_leader_propose_no > s_leader_propose_no:
+                        print('Change client {}\'s leader to {}'.\
+                              format(my_id, u_get_id(new_leader_propose_no,
+                                                     c_replica_num)))
+                        # prepare message and destination to be resent
+                        s_leader_propose_no = new_leader_propose_no
 
-                    print('Change client {}\'s leader to {}'.\
-                          format(my_id, u_get_id(new_leader_propose_no,
-                                                 c_replica_num)))
-                    # prepare message and destination to be resent
-                    s_leader_propose_no = new_leader_propose_no
+                        # Resend the client request
+                        paxos_client_request(my_id,
+                                             my_ip,
+                                             my_port,
+                                             s_request_no,
+                                             s_leader_propose_no,
+                                             value,
+                                             s_replica_config)
 
-                    # Resend the client request
-                    paxos_client_request(my_id,
-                                         my_ip,
-                                         my_port,
-                                         s_request_no,
-                                         s_leader_propose_no,
-                                         value,
-                                         s_replica_config)
-
-                    # Reinitialize the timer
-                    time_recorder = time.time()
-                    continue
+                        # Reinitialize the timer
+                        time_recorder = time.time()
+                        continue
 
                 if (time.time() - time_recorder) >= 3:
                     print('Client {} send timout message to all'.format(my_id))
