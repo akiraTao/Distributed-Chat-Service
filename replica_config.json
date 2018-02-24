@@ -6,7 +6,10 @@
             "id": 0,
             "ip": "localhost",
             "port": 6000,
-            "skip_slot": [],
+            "skip_slot": [
+                0,
+                1
+            ],
             "drop_rate": 0
         },
         {

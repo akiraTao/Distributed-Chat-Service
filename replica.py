@@ -66,8 +66,12 @@ def handle_replica(replica_id, replica_config_list):
     # The ip address and port information
     c_my_ip = s_replica_config[replica_id]['ip']
     c_my_port = s_replica_config[replica_id]['port']
-    c_my_skip_list = s_replica_config[replica_id]['skip_slot']
+    c_my_skip_slot = s_replica_config[replica_id]['skip_slot']
     c_my_drop_rate = s_replica_config[replica_id]['drop_rate']
+
+    # Let s_next_slot skip the skip slots
+    while s_next_slot in c_my_skip_slot:
+        s_next_slot += 1
 
     # Build the socket to receive external message
     # UDP socket also has buffer to store incoming messages
@@ -92,8 +96,8 @@ def handle_replica(replica_id, replica_config_list):
     # If I am the leader at the very beginning
     if u_get_id(s_leader_propose_no, c_replica_num) == replica_id:
         # TODO: This is to ensure every other process is up (not safe)
-        # time.sleep(1)
-        sys.exit(1)
+        time.sleep(1)
+        # sys.exit(1)
 
         # Initialize temp variables with leader's own slot
         # It is guaranteed to be default valur though, just for consistency
@@ -428,9 +432,14 @@ def handle_replica(replica_id, replica_config_list):
 
                         # 'established' state is the final round of 'prepare' state
                         elif s_leader_state == 'established':
-                            assert( s_next_slot == s_first_unchosen - 1 )
-                            # If still in established stage, pick s_first_unchosen as s_next_slot
-                            s_next_slot = s_first_unchosen
+                            # The feature of skip_slot means that s_next_slot is independent of s_first_unchosen
+                            assert ( s_next_slot != s_first_unchosen )
+                            s_next_slot = s_first_unchosen if (s_next_slot <= s_first_unchosen) else (s_next_slot + 1)
+
+                            # Let s_next_slot skip the skip slots
+                            while s_next_slot in c_my_skip_slot:
+                                s_next_slot += 1
+
                             # Change the leader state
                             s_leader_state = 'dictated'
                             # Propose the client request, or declare waiting_client
@@ -472,6 +481,10 @@ def handle_replica(replica_id, replica_config_list):
                                     # Now s_next_slot is independent of s_first_unchosen
                                     s_next_slot += 1
 
+                                    # Let s_next_slot skip the skip slots
+                                    while s_next_slot in c_my_skip_slot:
+                                        s_next_slot += 1
+
                                 # After exhausting the request queue, have to wait
                                 s_waiting_client = True    
 
@@ -480,9 +493,13 @@ def handle_replica(replica_id, replica_config_list):
                                 s_waiting_client = True
 
                         else: # if s_leader_state == 'prepare'
-                            assert( s_next_slot == s_first_unchosen - 1 )
-                            # If still in prepare stage, pick s_first_unchosen as s_next_slot
-                            s_next_slot = s_first_unchosen
+                            # The feature of skip_slot means that s_next_slot is independent of s_first_unchosen
+                            assert ( s_next_slot != s_first_unchosen )
+                            s_next_slot = s_first_unchosen if (s_next_slot <= s_first_unchosen) else (s_next_slot + 1)
+
+                            # Let s_next_slot skip the skip slots
+                            while s_next_slot in c_my_skip_slot:
+                                s_next_slot += 1
 
                             # Initialize temp variables with leader's own slot
                             t_value = s_accepted.get(s_next_slot, None)
@@ -505,8 +522,11 @@ def handle_replica(replica_id, replica_config_list):
 
                     # If I am not the leader, just follow first_unchosen
                     else:
-                        assert( s_next_slot == s_first_unchosen - 1 )
-                        s_next_slot = s_first_unchosen
+                        # The feature of skip_slot means that s_next_slot is independent of s_first_unchosen
+                        s_next_slot = s_first_unchosen if (s_next_slot <= s_first_unchosen) else (s_next_slot + 1)
+                        # Let s_next_slot skip the skip slots
+                        while s_next_slot in c_my_skip_slot:
+                            s_next_slot += 1
 
 
         elif message_type == 'client_request':
@@ -597,6 +617,10 @@ def handle_replica(replica_id, replica_config_list):
                 elif s_leader_state == 'dictated':
                     s_next_slot += 1
 
+                    # Let s_next_slot skip the skip slots
+                    while s_next_slot in c_my_skip_slot:
+                        s_next_slot += 1
+
                 else:
                     # Other state is not expected
                     print('invalid state {}'.format(s_leader_state))
@@ -642,7 +666,7 @@ def handle_replica(replica_id, replica_config_list):
             log_file_name = os.path.join(base_dir, 'replica_{}.log'.format(replica_id))
             with open(log_file_name, 'w') as log_file_handle:
                 for i in range(s_first_unchosen):
-                    log_file_handle.write(str(s_accepted[i]) + '\n')
+                    log_file_handle.write(str(str(i) + ' ' + s_accepted[i]) + '\n')
 
 
         # TODO: Add other message necessary
