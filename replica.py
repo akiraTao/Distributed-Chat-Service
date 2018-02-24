@@ -1,5 +1,6 @@
 #!/usr/env/bin python3
 
+import os
 import sys
 import copy
 import json
@@ -634,6 +635,14 @@ def handle_replica(replica_id, replica_config_list):
 
             paxos_tell_client_new_leader(replica_id, s_leader_propose_no,
                                          client_ip, client_port, c_my_drop_rate)
+
+
+        elif message_type == 'print_log':
+            base_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'log')
+            log_file_name = os.path.join(base_dir, 'replica_{}.log'.format(replica_id))
+            with open(log_file_name, 'w') as log_file_handle:
+                for i in range(s_first_unchosen):
+                    log_file_handle.write(str(s_accepted[i]) + '\n')
 
 
         # TODO: Add other message necessary

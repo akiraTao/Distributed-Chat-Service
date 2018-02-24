@@ -4,7 +4,8 @@ import json
 import time
 import click
 import socket
-from paxos_util import paxos_client_request, paxos_client_timeout, u_get_id
+from paxos_util import paxos_client_request, paxos_client_timeout, u_get_id,\
+                       paxos_print_log
 
 
 def send_client_request(my_id, my_ip, my_port, replica_config, my_drop_rate):
@@ -120,6 +121,10 @@ def send_client_request(my_id, my_ip, my_port, replica_config, my_drop_rate):
 
                     # Reinitialize the timer
                     time_recorder = time.time()
+
+
+        elif user_command == 'p':
+            paxos_print_log(my_id, replica_config)
 
 
         elif user_command == 'e':

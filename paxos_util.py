@@ -182,6 +182,18 @@ def paxos_client_timeout(my_id,
                                 replica_addr['port'], my_id, drop_rate)
 
 
+# This function is used by client to trigger log printing
+def paxos_print_log(my_id,
+                    replica_config):
+    message = {
+        'message_type' : 'print_log'
+    }
+
+    for replica_addr in replica_config.values():
+        u_send_message(message, replica_addr['ip'],
+                                replica_addr['port'], my_id, 0)
+
+
 # General routine for sending message to the receiver
 def u_send_message(message_body,
                    receiver_ip,

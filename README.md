@@ -41,6 +41,12 @@
 
 
 {
+    'message_type' : 'new_leader_to_client',
+    'propose_no' : new_leader_propose_no
+}
+
+
+{
     'message_type' : 'client_request',
     'client_id' : my_id,
     'client_ip' : my_ip,
@@ -60,12 +66,9 @@
     'propose_no' : leader_propose_no
 }
 
-
 {
-    'message_type' : 'new_leader_to_client',
-    'propose_no' : new_leader_propose_no
+    'message_type' : 'print_log'
 }
-
 
 
 
@@ -86,12 +89,4 @@
     'message_type' : 'rescue_choose',
     'range' : (your_first_unchosen, my_first_unchosen),
     'value' : [] 
-}
-
-{
-    'message_type' : 'view_change',
-    'client_id' : Int,
-    'client_request_no' : Int,
-    'message' : value,
-    'new_proposer' : proposer_no
 }
