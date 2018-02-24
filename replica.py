@@ -91,10 +91,11 @@ def handle_replica(replica_id, replica_config_list):
     # If I am the leader at the very beginning
     if u_get_id(s_leader_propose_no, c_replica_num) == replica_id:
         # TODO: This is to ensure every other process is up (not safe)
-        time.sleep(1)
-        # sys.exit(1)
+        # time.sleep(1)
+        sys.exit(1)
 
         # Initialize temp variables with leader's own slot
+        # It is guaranteed to be default valur though, just for consistency
         t_value = s_accepted.get(s_next_slot, None)
         t_propose_no = s_proposer.get(s_next_slot, 0)
         t_client_request = s_client_request.get(s_next_slot, None)
@@ -103,16 +104,11 @@ def handle_replica(replica_id, replica_config_list):
         # Before sending prepare msg, the leader already has one ack (itself)
         s_ack_msg_count[s_next_slot] = 1
 
-        assert ( s_leader_state == 'prepare' )
-
         # Propose to every other replica
-        paxos_prepare(replica_id,
-                      s_leader_propose_no,
-                      s_next_slot,
-                      s_replica_config,
-                      c_my_drop_rate)
+        paxos_prepare(replica_id, s_leader_propose_no, s_next_slot,
+                      s_replica_config, c_my_drop_rate)
 
-    # TODO: Probably can be replaced with some sort of shutdown message
+
     # This basically constantly fetched the next message in the socket
     #   buffer and take action according to the message type
     while True:
@@ -122,8 +118,7 @@ def handle_replica(replica_id, replica_config_list):
         message = json.loads(data.decode('utf-8'))
         message_type = message['message_type']
 
-        # Debugging message
-        # print(replica_id, message_type)
+        print(replica_id, message_type)
 
         if message_type == 'prepare':
             proposed_no = message['proposer']
@@ -131,10 +126,6 @@ def handle_replica(replica_id, replica_config_list):
 
             # If the proposal is old, just ignore it
             if proposed_no < s_leader_propose_no:
-                continue
-
-            # If myself happens to be the leader, ignore
-            if replica_id == u_get_id(s_leader_propose_no, c_replica_num):
                 continue
 
             # Update the leader proposal number
@@ -180,8 +171,6 @@ def handle_replica(replica_id, replica_config_list):
             if u_get_id(s_leader_propose_no, c_replica_num) != replica_id:
                 continue
 
-            # TODO: Check whether the proposer of ack_prepare is the leader itself (need to change JSON)
-
             # If this is the remaining  possible ack from previous prepare, or
             # If the slot is already proposed, ignore further ack_prepare
             if acked_slot != s_next_slot or\
@@ -222,17 +211,17 @@ def handle_replica(replica_id, replica_config_list):
                     if s_next_slot > s_last_accepted: 
                         s_last_accepted = s_next_slot
 
-                    paxos_propose(replica_id, t_value, s_leader_propose_no, t_client_request, t_client_addr, 
-                                  s_first_unchosen, s_next_slot, s_replica_config, c_my_drop_rate)
+                    paxos_propose(replica_id, t_value, s_leader_propose_no,
+                                  t_client_request, t_client_addr, 
+                                  s_first_unchosen, s_next_slot,
+                                  s_replica_config, c_my_drop_rate)
 
                     paxos_accept(replica_id,
                                  s_accepted[acked_slot],
                                  s_proposer[acked_slot],
                                  s_client_request[acked_slot],
                                  s_client_addr[acked_slot],
-                                 acked_slot,
-                                 s_replica_config,
-                                 c_my_drop_rate)
+                                 acked_slot, s_replica_config, c_my_drop_rate)
 
                 else:
                     # Propose the client request, or declare waiting_client
@@ -258,17 +247,17 @@ def handle_replica(replica_id, replica_config_list):
                         if s_next_slot > s_last_accepted: 
                             s_last_accepted = s_next_slot
 
-                        paxos_propose(replica_id, value, propose_no, client_request, client_addr,
-                                      s_first_unchosen, s_next_slot, s_replica_config, c_my_drop_rate)
+                        paxos_propose(replica_id, value, propose_no,
+                                      client_request, client_addr,
+                                      s_first_unchosen, s_next_slot,
+                                      s_replica_config, c_my_drop_rate)
 
                         paxos_accept(replica_id,
                                      s_accepted[acked_slot],
                                      s_proposer[acked_slot],
                                      s_client_request[acked_slot],
                                      s_client_addr[acked_slot],
-                                     acked_slot,
-                                     s_replica_config,
-                                     c_my_drop_rate)
+                                     acked_slot, s_replica_config, c_my_drop_rate)
                     else:
                         s_waiting_client = True
                 
@@ -289,13 +278,13 @@ def handle_replica(replica_id, replica_config_list):
             prop_slot = message['slot']
 
             # If this is the decree from old leader, just ignore it
-            # TODO: Do I need to reject old leader?
             if prop_proposed_no < s_leader_propose_no:
                 continue
 
             # It is possible that the replica first receives 'accept' then this 'propose',
             #   in which case s_accept_msg_count[prop_slot] is at least 2
-            if s_accept_msg_count.get(prop_slot, 0) > 1:
+            if prop_proposed_no == s_leader_propose_no and\
+                    s_accept_msg_count.get(prop_slot, 0) > 1:
                 continue
 
             # Update the leader proposal number
@@ -323,9 +312,7 @@ def handle_replica(replica_id, replica_config_list):
                          s_proposer[prop_slot],
                          s_client_request[prop_slot],
                          s_client_addr[prop_slot],
-                         prop_slot,
-                         s_replica_config,
-                         c_my_drop_rate)
+                         prop_slot, s_replica_config, c_my_drop_rate)
 
             # TODO: send help message to the leader based on first_unchosen
 
@@ -348,6 +335,7 @@ def handle_replica(replica_id, replica_config_list):
             elif accept_propose_no > s_leader_propose_no:
                 # Update the leader
                 s_leader_propose_no = accept_propose_no
+                # Even if it originally is leader, it shouldn't be now
                 # if s_leader_propose_no (prev) == s_my_propose_no:
                 s_leader_state = 'prepare'
                 s_ack_msg_count[accept_propose_no] = 0
@@ -360,24 +348,25 @@ def handle_replica(replica_id, replica_config_list):
                 # This includes myself and the one sends accept to me
                 s_accept_msg_count[accept_slot] = 2
 
+                # Update last_accepted if necessary
+                if accept_slot > s_last_accepted: 
+                    s_last_accepted = accept_slot
+
                 paxos_accept(replica_id,
                              s_accepted[accept_slot],
                              s_proposer[accept_slot],
                              s_client_request[accept_slot],
                              s_client_addr[accept_slot],
-                             accept_slot,
-                             s_replica_config,
-                             c_my_drop_rate)
+                             accept_slot, s_replica_config, c_my_drop_rate)
             # If the accept message is just this propose_no:
             else:
                 # If the acceptor didn't get propose message but get accept message:
                 # It is possible that a replica only received prepare but not propose
                 if (accept_slot not in s_accept_msg_count) or\
-                        (accept_propose_no > s_proposer[accept_slot] or\
-                         s_accept_msg_count[accept_slot] == 0):
+                        (s_accept_msg_count[accept_slot] == 0):
+                        # (accept_propose_no > s_proposer[accept_slot]) or\
                     # This should not happen when I am leader
                     assert ( u_get_id(s_leader_propose_no, c_replica_num) != replica_id ) 
-
                     s_accepted[accept_slot] = accept_value
                     s_proposer[accept_slot] = accept_propose_no
                     s_client_request[accept_slot] = accept_client_request
@@ -385,22 +374,30 @@ def handle_replica(replica_id, replica_config_list):
                     # This includes myself and the one sends accept to me
                     s_accept_msg_count[accept_slot] = 2
 
+                    # Update last_accepted if necessary
+                    if accept_slot > s_last_accepted: 
+                        s_last_accepted = accept_slot
+
                     paxos_accept(replica_id,
                                  s_accepted[accept_slot],
                                  s_proposer[accept_slot],
                                  s_client_request[accept_slot],
                                  s_client_addr[accept_slot],
-                                 accept_slot,
-                                 s_replica_config,
-                                 c_my_drop_rate)
+                                 accept_slot, s_replica_config, c_my_drop_rate)
                     
                     continue
 
                 assert ( s_accept_msg_count[accept_slot] > 0 )
 
                 s_accept_msg_count[accept_slot] += 1
+
                 # If the majority accept arrives, learn the value
                 if s_accept_msg_count[accept_slot] == c_majority_num:
+                    # If the value has already been learnt in another slot:
+                    if tuple(accept_client_request) in s_chosen_client_request:
+                        # Learn NoOp in this slot (in fact this is impossible)
+                        assert ( 0 )
+
                     # Learn the accepted value
                     s_learned.add(accept_slot)
                     # Once the client request has been learnt, it should never be executed again
@@ -409,7 +406,7 @@ def handle_replica(replica_id, replica_config_list):
                     if s_first_unchosen == accept_slot:
                         while s_first_unchosen in s_learned:
                             s_first_unchosen += 1
-                        s_next_slot = s_first_unchosen
+
 
                     print('Replica {} done with slot {}, value {}'.\
                         format(replica_id, accept_slot, s_accepted[accept_slot]))
@@ -425,10 +422,13 @@ def handle_replica(replica_id, replica_config_list):
                         # 'dictate' state means no need for prepare
                         # Now s_next_slot is independent of s_first_unchosen
                         if s_leader_state == 'dictated':
+                            assert( s_next_slot >= s_first_unchosen )
                             continue
 
                         # 'established' state is the final round of 'prepare' state
                         elif s_leader_state == 'established':
+                            assert( s_next_slot == s_first_unchosen - 1 )
+                            # If still in established stage, pick s_first_unchosen as s_next_slot
                             s_next_slot = s_first_unchosen
                             # Change the leader state
                             s_leader_state = 'dictated'
@@ -479,6 +479,7 @@ def handle_replica(replica_id, replica_config_list):
                                 s_waiting_client = True
 
                         else: # if s_leader_state == 'prepare'
+                            assert( s_next_slot == s_first_unchosen - 1 )
                             # If still in prepare stage, pick s_first_unchosen as s_next_slot
                             s_next_slot = s_first_unchosen
 
@@ -491,11 +492,20 @@ def handle_replica(replica_id, replica_config_list):
                             # Before sending prepare msg, the leader already has one ack (itself)
                             s_ack_msg_count[s_next_slot] = 1
 
+                            # Just an initialization for safety
+                            s_leader_state = 'prepare'
+                            s_accept_msg_count[s_next_slot] = 0
+
                             paxos_prepare(replica_id,
                                           s_leader_propose_no,
                                           s_next_slot,
                                           s_replica_config,
                                           c_my_drop_rate)
+
+                    # If I am not the leader, just follow first_unchosen
+                    else:
+                        assert( s_next_slot == s_first_unchosen - 1 )
+                        s_next_slot = s_first_unchosen
 
 
         elif message_type == 'client_request':
@@ -507,20 +517,20 @@ def handle_replica(replica_id, replica_config_list):
 
             # Cannot process duplicate client requests
             if (client_id, client_request_no) in s_chosen_client_request:
+                # But tell client that message has already been learnt
+                paxos_ack_client(replica_id, client_request_no,
+                                 (client_ip, client_port), c_my_drop_rate)
                 continue
 
             # If the client-believed leader is older, tell it the correct leader
             if client_think_propose_no < s_leader_propose_no:
-                paxos_tell_client_new_leader(replica_id,
-                                             s_leader_propose_no,
-                                             client_ip,
-                                             client_port,
+                paxos_tell_client_new_leader(replica_id, s_leader_propose_no,
+                                             client_ip, client_port,
                                              c_my_drop_rate)
                 continue
 
             # If the client-believed leader is newer, I become the new leader
             elif client_think_propose_no > s_leader_propose_no:
-                assert ( s_waiting_client == False )
                 # Initialize temp variables with leader's own slot
                 t_value = s_accepted.get(s_next_slot, None)
                 t_propose_no = s_proposer.get(s_next_slot, 0)
@@ -530,11 +540,15 @@ def handle_replica(replica_id, replica_config_list):
                 # Before sending prepare msg, the leader already has one ack (itself)
                 s_ack_msg_count[s_next_slot] = 1
 
-                paxos_prepare(replica_id,
-                              s_leader_propose_no,
-                              s_next_slot,
-                              s_replica_config,
-                              c_my_drop_rate)
+                # Update own view of leader
+                s_leader_propose_no = client_think_propose_no
+                # Just an initialization for safety
+                s_leader_state = 'prepare'
+                s_accept_msg_count[s_next_slot] = 0
+
+                paxos_prepare(replica_id, s_leader_propose_no, s_next_slot,
+                              s_replica_config, c_my_drop_rate)
+
 
             # Append the client request message to queue
             s_request_queue.append(message)
@@ -555,24 +569,23 @@ def handle_replica(replica_id, replica_config_list):
                 s_client_request[s_next_slot] = client_request
                 s_client_addr[s_next_slot] = client_addr
 
-                # Increment the s_accept_msg_count
+                # Initialize the s_accept_msg_count
                 s_accept_msg_count[s_next_slot] = 1
 
                 # Update last_accepted
                 if s_next_slot > s_last_accepted: 
                     s_last_accepted = s_next_slot
 
-                paxos_propose(replica_id, value, propose_no, client_request, client_addr,
-                              s_first_unchosen, s_next_slot, s_replica_config, c_my_drop_rate)
+                paxos_propose(replica_id, value, propose_no, client_request, 
+                              client_addr, s_first_unchosen, s_next_slot,
+                              s_replica_config, c_my_drop_rate)
 
                 paxos_accept(replica_id,
                              s_accepted[s_next_slot],
-                             s_proposer[s_next_slot],
+                             s_proposer[s_next_slot], 
                              s_client_request[s_next_slot],
                              s_client_addr[s_next_slot],
-                             s_next_slot,
-                             s_replica_config,
-                             c_my_drop_rate)
+                             s_next_slot, s_replica_config, c_my_drop_rate)
 
                 if s_leader_state == 'prepare':
                     s_waiting_client = False
@@ -596,16 +609,10 @@ def handle_replica(replica_id, replica_config_list):
 
             # Client is newer, meaning I should listen to the client
             if client_think_propose_no >= s_leader_propose_no:
-                s_leader_propose_no += 1
+                s_leader_propose_no = client_think_propose_no + 1
 
             # If I am newer, meaning client missed something, just tell it mine
             # Do nothing in this case
-
-            paxos_tell_client_new_leader(replica_id,
-                                         s_leader_propose_no,
-                                         client_ip,
-                                         client_port,
-                                         c_my_drop_rate)
 
             # If I happened to be the new leader
             if u_get_id(s_leader_propose_no, c_replica_num) == replica_id:
@@ -618,14 +625,15 @@ def handle_replica(replica_id, replica_config_list):
                 # Before sending prepare msg, the leader already has one ack (itself)
                 s_ack_msg_count[s_next_slot] = 1
 
-                # If the invariant is correct, the leader should be in prepare state
-                assert ( s_leader_state == 'prepare' )
+                # Just an initialization for safety
+                s_leader_state = 'prepare'
+                s_accept_msg_count[s_next_slot] = 0
 
-                paxos_prepare(replica_id,
-                              s_leader_propose_no,
-                              s_next_slot,
-                              s_replica_config,
-                              c_my_drop_rate)
+                paxos_prepare(replica_id, s_leader_propose_no,
+                              s_next_slot, s_replica_config, c_my_drop_rate)
+
+            paxos_tell_client_new_leader(replica_id, s_leader_propose_no,
+                                         client_ip, client_port, c_my_drop_rate)
 
 
         # TODO: Add other message necessary
@@ -656,7 +664,8 @@ def main(config_file):
     if mode == 'script':
         # Spew out replica_num subprocesses
         for replica_id in range(replica_num):
-            p = Process(target=handle_replica, args=(replica_id, replica_config_list))
+            p = Process(target=handle_replica,
+                        args=(replica_id, replica_config_list))
             p.start()
 
     elif mode == 'manual':
