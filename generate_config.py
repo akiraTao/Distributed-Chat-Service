@@ -11,14 +11,16 @@ import click
               help='Specify the replica i skip the slot j by --skip i j')
 @click.option('--prob', '-p', type=(int, int), multiple=True,
               help='Specify the replica i drop j% message by --prob i j')
-def generate_config(f, manual, skip, prob):
+@click.option('--proball', '-pa', type=int,
+              help='Specify all replicas drop j% message by --proball j')
+def generate_config(f, manual, skip, prob, proball):
     """Generate config file for Paxos replicas tolerating F benign failures"""
     config_data = {}
     config_data['f'] = f
     config_data['mode'] = 'manual' if (manual == True) else 'script' 
     config_data['replica_list'] = []
 
-    port_base = 8000
+    port_base = 6000
     replica_num = 2 * f + 1
     # Configure 2f+1 replica information
     for replica_id in range(replica_num):
@@ -27,8 +29,12 @@ def generate_config(f, manual, skip, prob):
             'ip' : 'localhost',
             'port' : port_base + replica_id,
             'skip_slot' : [],
-            'drop_rate' : 0.0 
+            'drop_rate' : 0
         }
+        # Specify all replica as same drop_rate
+        if proball:
+            replica_config['drop_rate'] = proball
+
         config_data['replica_list'].append(replica_config)
 
     # Just a local variable for cleaner access

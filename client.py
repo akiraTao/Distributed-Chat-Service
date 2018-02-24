@@ -7,7 +7,7 @@ import socket
 from paxos_util import paxos_client_request, paxos_client_timeout, u_get_id
 
 
-def send_client_request(my_id, my_ip, my_port, replica_config):
+def send_client_request(my_id, my_ip, my_port, replica_config, my_drop_rate):
     '''The actual client request execution interface.'''
 
     # { replica_id : { 'ip' : '', 'port' : '' } }
@@ -18,6 +18,8 @@ def send_client_request(my_id, my_ip, my_port, replica_config):
     s_request_no = 0
     # The id of the leader who I believe is the leader
     s_leader_propose_no = 0
+    # Initial timeout time
+    time_gap = 1
 
     # Build the socket to receive external messages
     my_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -25,7 +27,7 @@ def send_client_request(my_id, my_ip, my_port, replica_config):
     my_socket.bind((my_ip, my_port))
 
     # TODO: Client timeout should be dynamic or increasing
-    my_socket.settimeout(3)
+    my_socket.settimeout(time_gap)
 
     while True:
         command_str = 'Enter your command' + '\n' +\
@@ -38,13 +40,9 @@ def send_client_request(my_id, my_ip, my_port, replica_config):
             value = input('Enter your message: ')
 
             # Send parsed message to assumed leader
-            paxos_client_request(my_id,
-                                 my_ip,
-                                 my_port,
-                                 s_request_no,
-                                 s_leader_propose_no,
-                                 value,
-                                 s_replica_config)
+            paxos_client_request(my_id, my_ip, my_port, s_request_no,
+                                 s_leader_propose_no, value,
+                                 s_replica_config, my_drop_rate)
 
             # Start recording the time for timeout
             time_recorder = time.time()
@@ -59,14 +57,16 @@ def send_client_request(my_id, my_ip, my_port, replica_config):
 
                 except socket.timeout:
                     print('Client {} send timeout message to all'.format(my_id))
+                    # print('Client {} increases its timeout time'.format(my_id))
+
+                    # Increase the timeout gap
+                    time_gap += 0.5
+                    my_socket.settimeout(time_gap)
 
                     # when timeout, send timeout messages to all
-                    paxos_client_timeout(my_id,
-                                         my_ip,
-                                         my_port,
-                                         s_request_no,
-                                         s_leader_propose_no,
-                                         s_replica_config)
+                    paxos_client_timeout(my_id, my_ip, my_port, s_request_no,
+                                         s_leader_propose_no, s_replica_config,
+                                         my_drop_rate)
 
                     # Reinitialize the timer
                     time_recorder = time.time()
@@ -87,6 +87,8 @@ def send_client_request(my_id, my_ip, my_port, replica_config):
                     # This is the propose_no of new leader
                     new_leader_propose_no = reply_message['propose_no']
 
+                    # It is possible that I have sent multiple same timeout messages
+                    #   if the destination is on Mars
                     if new_leader_propose_no > s_leader_propose_no:
                         print('Change client {}\'s leader to {}'.\
                               format(my_id, u_get_id(new_leader_propose_no,
@@ -95,31 +97,30 @@ def send_client_request(my_id, my_ip, my_port, replica_config):
                         s_leader_propose_no = new_leader_propose_no
 
                         # Resend the client request
-                        paxos_client_request(my_id,
-                                             my_ip,
-                                             my_port,
-                                             s_request_no,
-                                             s_leader_propose_no,
-                                             value,
-                                             s_replica_config)
+                        paxos_client_request(my_id, my_ip, my_port, s_request_no,
+                                             s_leader_propose_no, value,
+                                             s_replica_config, my_drop_rate)
 
                         # Reinitialize the timer
                         time_recorder = time.time()
                         continue
 
-                if (time.time() - time_recorder) >= 3:
+                if (time.time() - time_recorder) >= time_gap:
                     print('Client {} send timout message to all'.format(my_id))
+                    # print('Client {} increases its timeout time'.format(my_id))
+
+                    # Increase the timeout gap
+                    time_gap += 0.5
+                    my_socket.settimeout(time_gap)
 
                     # when timeout, send timeout messages to all
-                    paxos_client_timeout(my_id,
-                                         my_ip,
-                                         my_port,
-                                         s_request_no,
-                                         s_leader_propose_no,
-                                         s_replica_config)
+                    paxos_client_timeout(my_id, my_ip, my_port, s_request_no,
+                                         s_leader_propose_no, s_replica_config,
+                                         my_drop_rate)
 
                     # Reinitialize the timer
                     time_recorder = time.time()
+
 
         elif user_command == 'e':
             break
@@ -133,13 +134,16 @@ def send_client_request(my_id, my_ip, my_port, replica_config):
 @click.argument('my_ip')
 @click.argument('my_port')
 @click.argument('replica_config_file')
-def main(client_id, my_ip, my_port, replica_config_file):
+@click.argument('client_drop_rate')
+def main(client_id, my_ip, my_port, replica_config_file, client_drop_rate):
     '''Main function is used for data preprocessing.'''
 
     # Convert to int which is required by repica_config
     my_id = int(client_id)
     # Convert to int which is required by socket bind
     my_port = int(my_port)
+    # Convert drop_rate to int
+    my_drop_rate = int(client_drop_rate)
     # Read necessary information from config_file
     replica_config_file_handle = open(replica_config_file, 'r')
     replica_config_data = replica_config_file_handle.read()
@@ -156,7 +160,7 @@ def main(client_id, my_ip, my_port, replica_config_file):
         }
 
     # Call the actual client request execution
-    send_client_request(my_id, my_ip, my_port, replica_config) 
+    send_client_request(my_id, my_ip, my_port, replica_config, my_drop_rate) 
 
 
 if __name__ == '__main__':

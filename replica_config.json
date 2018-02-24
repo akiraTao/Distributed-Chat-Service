@@ -1,139 +1,83 @@
 {
-    "f": 9,
+    "f": 5,
     "mode": "script",
     "replica_list": [
         {
             "id": 0,
             "ip": "localhost",
-            "port": 8000,
+            "port": 6000,
             "skip_slot": [],
-            "drop_rate": 0.0
+            "drop_rate": 0
         },
         {
             "id": 1,
             "ip": "localhost",
-            "port": 8001,
+            "port": 6001,
             "skip_slot": [],
-            "drop_rate": 0.0
+            "drop_rate": 0
         },
         {
             "id": 2,
             "ip": "localhost",
-            "port": 8002,
+            "port": 6002,
             "skip_slot": [],
-            "drop_rate": 0.0
+            "drop_rate": 0
         },
         {
             "id": 3,
             "ip": "localhost",
-            "port": 8003,
+            "port": 6003,
             "skip_slot": [],
-            "drop_rate": 0.0
+            "drop_rate": 0
         },
         {
             "id": 4,
             "ip": "localhost",
-            "port": 8004,
+            "port": 6004,
             "skip_slot": [],
-            "drop_rate": 0.0
+            "drop_rate": 0
         },
         {
             "id": 5,
             "ip": "localhost",
-            "port": 8005,
+            "port": 6005,
             "skip_slot": [],
-            "drop_rate": 0.0
+            "drop_rate": 0
         },
         {
             "id": 6,
             "ip": "localhost",
-            "port": 8006,
+            "port": 6006,
             "skip_slot": [],
-            "drop_rate": 0.0
+            "drop_rate": 0
         },
         {
             "id": 7,
             "ip": "localhost",
-            "port": 8007,
+            "port": 6007,
             "skip_slot": [],
-            "drop_rate": 0.0
+            "drop_rate": 0
         },
         {
             "id": 8,
             "ip": "localhost",
-            "port": 8008,
+            "port": 6008,
             "skip_slot": [],
-            "drop_rate": 0.0
+            "drop_rate": 0
         },
         {
             "id": 9,
             "ip": "localhost",
-            "port": 8009,
+            "port": 6009,
             "skip_slot": [],
-            "drop_rate": 0.0
+            "drop_rate": 0
         },
         {
             "id": 10,
             "ip": "localhost",
-            "port": 8010,
+            "port": 6010,
             "skip_slot": [],
-            "drop_rate": 0.0
-        },
-        {
-            "id": 11,
-            "ip": "localhost",
-            "port": 8011,
-            "skip_slot": [],
-            "drop_rate": 0.0
-        },
-        {
-            "id": 12,
-            "ip": "localhost",
-            "port": 8012,
-            "skip_slot": [],
-            "drop_rate": 0.0
-        },
-        {
-            "id": 13,
-            "ip": "localhost",
-            "port": 8013,
-            "skip_slot": [],
-            "drop_rate": 0.0
-        },
-        {
-            "id": 14,
-            "ip": "localhost",
-            "port": 8014,
-            "skip_slot": [],
-            "drop_rate": 0.0
-        },
-        {
-            "id": 15,
-            "ip": "localhost",
-            "port": 8015,
-            "skip_slot": [],
-            "drop_rate": 0.0
-        },
-        {
-            "id": 16,
-            "ip": "localhost",
-            "port": 8016,
-            "skip_slot": [],
-            "drop_rate": 0.0
-        },
-        {
-            "id": 17,
-            "ip": "localhost",
-            "port": 8017,
-            "skip_slot": [],
-            "drop_rate": 0.0
-        },
-        {
-            "id": 18,
-            "ip": "localhost",
-            "port": 8018,
-            "skip_slot": [],
-            "drop_rate": 0.0
+            "drop_rate": 0
         }
     ]
 }
