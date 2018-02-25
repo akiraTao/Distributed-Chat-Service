@@ -70,15 +70,6 @@
     'message_type' : 'print_log'
 }
 
-
-
-
-
-
-
-
-
-
 {
     'message_type' : 'help_me_choose',
     'replica_id' : replica_id,
@@ -86,7 +77,7 @@
 }
 
 {
-    'message_type' : 'rescue_choose',
+    'message_type' : 'you_can_choose',
     'range' : (your_first_unchosen, my_first_unchosen),
     'value' : [] 
 }

@@ -194,6 +194,50 @@ def paxos_print_log(my_id,
                                 replica_addr['port'], my_id, 0)
 
 
+# This function is used by replicas to catch up with chosen values
+def paxos_help_me_choose(my_id,
+                         my_first_unchosen,
+                         leader_id,
+                         replica_config,
+                         drop_rate):
+    message = {
+        'message_type' : 'help_me_choose',
+        'replica_id' : my_id,
+        'first_unchosen' : my_first_unchosen
+    }
+
+
+    u_send_message(message, replica_config[leader_id]['ip'],
+                            replica_config[leader_id]['port'], my_id, drop_rate)
+
+
+# This function is sent to help others catch up with chosen values
+# start_slot is inclusive, end_slot is exclusive
+def paxos_you_can_choose(my_id,
+                         start_slot,
+                         end_slot,
+                         s_accepted,
+                         s_proposer,
+                         s_client_request,
+                         s_client_addr,
+                         receiver_ip,
+                         receiver_port,
+                         drop_rate):
+
+    message = {
+        'message_type' : 'you_can_choose',
+        'start_slot' : start_slot,
+        'end_slot' : end_slot,
+        'accepted' : s_accepted[start_slot : end_slot],
+        'proposer' : s_proposer[start_slot : end_slot],
+        'client_request' : s_client_request[start_slot : end_slot] ,
+        'client_addr' : s_client_addr [start_slot : end_slot]
+    }
+
+    u_send_message(message, receiver_ip,
+                            receiver_port, my_id, drop_rate)
+
+
 # General routine for sending message to the receiver
 def u_send_message(message_body,
                    receiver_ip,

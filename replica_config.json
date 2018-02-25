@@ -7,8 +7,7 @@
             "ip": "localhost",
             "port": 6000,
             "skip_slot": [
-                0,
-                1
+                0
             ],
             "drop_rate": 0
         },

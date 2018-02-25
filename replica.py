@@ -11,7 +11,8 @@ from multiprocessing import Process
 from collections import OrderedDict
 from paxos_util import paxos_prepare, paxos_ack_prepare, paxos_propose,\
                        paxos_accept, paxos_ack_client, u_get_id,\
-                       paxos_tell_client_new_leader
+                       paxos_tell_client_new_leader, paxos_help_me_choose,\
+                       paxos_you_can_choose
 
 
 def handle_replica(replica_id, replica_config_list):
@@ -123,6 +124,7 @@ def handle_replica(replica_id, replica_config_list):
         message = json.loads(data.decode('utf-8'))
         message_type = message['message_type']
 
+        # Debugging message
         print(replica_id, message_type)
 
         if message_type == 'prepare':
@@ -320,6 +322,10 @@ def handle_replica(replica_id, replica_config_list):
                          prop_slot, s_replica_config, c_my_drop_rate)
 
             # TODO: send help message to the leader based on first_unchosen
+            if prop_first_unchosen > s_first_unchosen:
+                leader_id = u_get_id(s_leader_propose_no, c_replica_num)
+                paxos_help_me_choose(replica_id, s_first_unchosen, leader_id,
+                                     s_replica_config, c_my_drop_rate)
 
 
         elif message_type == 'accept':
@@ -669,9 +675,66 @@ def handle_replica(replica_id, replica_config_list):
                     log_file_handle.write(str(str(i) + ' ' + s_accepted[i]) + '\n')
 
 
-        # TODO: Add other message necessary
+        elif message_type == 'help_me_choose':
+            # Indeed, it does not matter whether I am leader right now
+            sender_id = message['replica_id']
+            sender_first_unchosen = message['first_unchosen']
+
+            assert ( sender_first_unchosen < s_first_unchosen )
+            for i in range(sender_first_unchosen, s_first_unchosen):
+                assert ( i in s_learned )
+
+            receiver_ip = s_replica_config[sender_id]['ip']
+            receiver_port = s_replica_config[sender_id]['port']
+
+            paxos_you_can_choose(replica_id, sender_first_unchosen,
+                                 s_first_unchosen, s_accepted, s_proposer,
+                                 s_client_request, s_client_addr,
+                                 receiver_ip, receiver_port, c_my_drop_rate)            
+
+
+        elif message_type == 'you_can_choose':
+            # The given range of slots must have been chosen by the other side
+            start_slot = message['start_slot']
+            end_slot = message['end_slot']
+            accepted = message['accepted']
+            proposer = message['proposer']
+            client_request = message['client_request']
+            client_addr = message['client_addr']
+
+            for idx in range(start_slot, end_slot):
+                ref_idx = idx - start_slot
+                # Before learn, accept the value
+                s_accepted[idx] = accepted[ref_idx]
+                s_proposer[idx] = proposer[ref_idx]
+                s_client_request[idx] = client_request[ref_idx]
+                s_client_addr[idx] = client_addr[ref_idx]
+                # Learn the value
+                s_accept_msg_count[idx] = c_majority_num
+                s_learned.add(idx)
+                s_chosen_client_request.add(tuple(client_request[ref_idx]))
+
+            # Update s_last_accepted
+            if (end_slot - 1) > s_last_accepted:
+                s_last_accepted = (end_slot - 1)
+
+            # Update s_first_unchosen
+            s_first_unchosen = end_slot
+            while s_first_unchosen in s_learned:
+                s_first_unchosen += 1
+
+            # Update s_next_slot
+            s_next_slot = s_first_unchosen if (s_next_slot <= s_first_unchosen) else s_next_slot
+
+            # Let s_next_slot skip the skip slots
+            while s_next_slot in c_my_skip_slot:
+                s_next_slot += 1
+                
+
         else:
-            pass
+            print('Replica {} received an erroneous message {}'.\
+                format(replica_id))
+            
 
 
     my_socket.close()
