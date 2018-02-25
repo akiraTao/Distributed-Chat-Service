@@ -455,7 +455,7 @@ def handle_replica(replica_id, replica_config_list):
                                     value = client_message['value']
                                     propose_no = s_leader_propose_no
                                     client_request = [client_message['client_id'],
-                                                      client_message['client_message_no']]
+                                                      client_message['client_request_no']]
                                     client_addr = [client_message['client_ip'],
                                                    client_message['client_port']]
 
@@ -669,6 +669,9 @@ def handle_replica(replica_id, replica_config_list):
 
         elif message_type == 'print_log':
             base_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'log')
+            if not os.path.isdir(base_dir):
+                os.makedirs(base_dir)
+
             log_file_name = os.path.join(base_dir, 'replica_{}.log'.format(replica_id))
             with open(log_file_name, 'w') as log_file_handle:
                 for i in range(s_first_unchosen):
@@ -729,7 +732,7 @@ def handle_replica(replica_id, replica_config_list):
             # Let s_next_slot skip the skip slots
             while s_next_slot in c_my_skip_slot:
                 s_next_slot += 1
-                
+
 
         else:
             print('Replica {} received an erroneous message {}'.\
@@ -742,7 +745,9 @@ def handle_replica(replica_id, replica_config_list):
 
 @click.command()
 @click.argument('config_file')
-def main(config_file):
+@click.option('--replica_id', '-i', type=int,
+              help='specify replica_id in manual mode')
+def main(config_file, replica_id):
     # Extract configuration data from specified config file
     config_str = ''
     with open(config_file, 'r') as config_handle:
@@ -765,8 +770,12 @@ def main(config_file):
             p.start()
 
     elif mode == 'manual':
-        # TODO : Implement manual mode (spew single process)
-        pass
+        if replica_id is None:
+            print('In manual mode, need to specify replica_id by -i id')
+            sys.exit(1)
+        p = Process(target=handle_replica,
+                    args=(replica_id, replica_config_list))
+        p.start()
 
     else:
         print('Mode can only be either script or manual')

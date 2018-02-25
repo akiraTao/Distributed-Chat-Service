@@ -223,15 +223,26 @@ def paxos_you_can_choose(my_id,
                          receiver_ip,
                          receiver_port,
                          drop_rate):
+    
+    accepted = []
+    proposer = []
+    client_request = [] 
+    client_addr = []
+
+    for i in range(start_slot, end_slot):
+        accepted.append(s_accepted[i])
+        proposer.append(s_proposer[i])
+        client_request.append(s_client_request[i])
+        client_addr.append(s_client_addr[i])
 
     message = {
         'message_type' : 'you_can_choose',
         'start_slot' : start_slot,
         'end_slot' : end_slot,
-        'accepted' : s_accepted[start_slot : end_slot],
-        'proposer' : s_proposer[start_slot : end_slot],
-        'client_request' : s_client_request[start_slot : end_slot] ,
-        'client_addr' : s_client_addr [start_slot : end_slot]
+        'accepted' : accepted,
+        'proposer' : proposer,
+        'client_request' : client_request,
+        'client_addr' : client_addr
     }
 
     u_send_message(message, receiver_ip,

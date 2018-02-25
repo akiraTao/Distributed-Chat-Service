@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 
+import os
 import json
 import click
+import shutil
 
 @click.command()
 @click.argument('f', nargs=1, type=int)
@@ -65,6 +67,13 @@ def generate_config(f, manual, skip, prob, proball):
     config_file = 'replica_config.json'
     with open(config_file, 'w') as config_handle:
         config_handle.write(json.dumps(config_data, indent=4))
+
+    # Initialize the log directory
+    log_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'log')
+    if os.path.isdir(log_dir):
+        shutil.rmtree(log_dir)
+    os.makedirs(log_dir)
+
 
 if __name__ == '__main__':
     generate_config()

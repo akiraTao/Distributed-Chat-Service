@@ -81,7 +81,7 @@ def send_client_request(my_id, my_ip, my_port, replica_config, my_drop_rate):
                     if reply_message['request_no'] == s_request_no:
                         print ('Message Recorded!')
                         # Increment request_no for next request
-                        # s_request_no += 1
+                        s_request_no += 1
                         break
 
                 elif message_type == 'new_leader_to_client':
