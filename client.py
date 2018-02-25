@@ -21,6 +21,7 @@ def send_client_request(my_id, my_ip, my_port, replica_config, my_drop_rate):
     s_leader_propose_no = 0
     # Initial timeout time
     time_gap = 1
+    time_gap_interval = 0
 
     # Build the socket to receive external messages
     my_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -61,7 +62,7 @@ def send_client_request(my_id, my_ip, my_port, replica_config, my_drop_rate):
                     # print('Client {} increases its timeout time'.format(my_id))
 
                     # Increase the timeout gap
-                    time_gap += 0.5
+                    time_gap += time_gap_interval
                     my_socket.settimeout(time_gap)
 
                     # when timeout, send timeout messages to all
@@ -111,7 +112,7 @@ def send_client_request(my_id, my_ip, my_port, replica_config, my_drop_rate):
                     # print('Client {} increases its timeout time'.format(my_id))
 
                     # Increase the timeout gap
-                    time_gap += 0.5
+                    time_gap += time_gap_interval
                     my_socket.settimeout(time_gap)
 
                     # when timeout, send timeout messages to all

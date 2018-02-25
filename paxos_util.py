@@ -259,8 +259,11 @@ def u_send_message(message_body,
     random_num = random.randint(1, 100)
 
     if random_num <= drop_rate:
-        print('Replica {} dropped message'.format(my_id))
+        print('Replica {} dropped message {}'.format(my_id,
+                                                     message_body['message_type']))
         return
+
+    print('Replica {} send message {} to {}'.format(my_id, message_body['message_type'], receiver_port))
 
     # Serialize message_body to proper format
     data = json.dumps(message_body).encode('utf-8')

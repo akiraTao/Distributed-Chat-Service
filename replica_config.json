@@ -7,21 +7,21 @@
             "ip": "localhost",
             "port": 6000,
             "skip_slot": [],
-            "drop_rate": 0
+            "drop_rate": 30
         },
         {
             "id": 1,
             "ip": "localhost",
             "port": 6001,
             "skip_slot": [],
-            "drop_rate": 0
+            "drop_rate": 30
         },
         {
             "id": 2,
             "ip": "localhost",
             "port": 6002,
             "skip_slot": [],
-            "drop_rate": 0
+            "drop_rate": 30
         }
     ]
 }
