@@ -325,6 +325,9 @@ def handle_replica(replica_id, replica_config_list):
 
                         # Now s_next_slot is independent of s_first_unchosen
                         s_next_slot += 1
+                        while s_next_slot in s_learned:
+                            s_next_slot += 1
+
                         # Let s_next_slot skip the skip slots
                         while s_next_slot in c_my_skip_slot:
                             s_next_slot += 1
@@ -370,6 +373,8 @@ def handle_replica(replica_id, replica_config_list):
 
                             # Now s_next_slot is independent of s_first_unchosen
                             s_next_slot += 1
+                            while s_next_slot in s_learned:
+                                s_next_slot += 1
 
                             # Let s_next_slot skip the skip slots
                             while s_next_slot in c_my_skip_slot:
@@ -382,6 +387,8 @@ def handle_replica(replica_id, replica_config_list):
                     assert ( s_leader_state == 'prepare' )
                     # Just jump to the next slot
                     s_next_slot += 1
+                    while s_next_slot in s_learned:
+                        s_next_slot += 1
 
                     # Let s_next_slot skip the skip slots
                     while s_next_slot in c_my_skip_slot:
@@ -454,10 +461,10 @@ def handle_replica(replica_id, replica_config_list):
                          prop_slot, s_replica_config, c_my_drop_rate)
 
             # TODO: send help message to the leader based on first_unchosen
-            # if prop_first_unchosen > s_first_unchosen:
-            #     leader_id = u_get_id(s_leader_propose_no, c_replica_num)
-            #     paxos_help_me_choose(replica_id, s_first_unchosen, leader_id,
-            #                          s_replica_config, c_my_drop_rate)
+            if prop_first_unchosen > s_first_unchosen:
+                leader_id = u_get_id(s_leader_propose_no, c_replica_num)
+                paxos_help_me_choose(replica_id, s_first_unchosen, leader_id,
+                                     s_replica_config, c_my_drop_rate)
 
 
         elif message_type == 'accept':
@@ -634,6 +641,9 @@ def handle_replica(replica_id, replica_config_list):
                             s_leader_state = 'dictated'
                             # Now s_next_slot is independent of s_first_unchosen
                             s_next_slot += 1
+                            while s_next_slot in s_learned:
+                                s_next_slot += 1
+
                             # Let s_next_slot skip the skip slots
                             while s_next_slot in c_my_skip_slot:
                                 s_next_slot += 1
@@ -679,6 +689,8 @@ def handle_replica(replica_id, replica_config_list):
 
                                 # Now s_next_slot is independent of s_first_unchosen
                                 s_next_slot += 1
+                                while s_next_slot in s_learned:
+                                    s_next_slot += 1
 
                                 # Let s_next_slot skip the skip slots
                                 while s_next_slot in c_my_skip_slot:
@@ -750,6 +762,10 @@ def handle_replica(replica_id, replica_config_list):
             elif client_think_propose_no > s_leader_propose_no:
                 assert ( u_get_id(client_think_propose_no, c_replica_num) ==\
                          replica_id )
+
+                # Change s_next_slot back to s_first_unchosen
+                s_next_slot = s_first_unchosen
+
                 # Initialize temp variables with leader's own slot
                 t_value = s_accepted.get(s_next_slot, None)
                 t_propose_no = s_proposer.get(s_next_slot, 0)
@@ -835,6 +851,9 @@ def handle_replica(replica_id, replica_config_list):
 
                         # Now s_next_slot is independent of s_first_unchosen
                         s_next_slot += 1
+                        while s_next_slot in s_learned:
+                            s_next_slot += 1
+
                         # Let s_next_slot skip the skip slots
                         while s_next_slot in c_my_skip_slot:
                             s_next_slot += 1
@@ -881,6 +900,8 @@ def handle_replica(replica_id, replica_config_list):
 
                             # Now s_next_slot is independent of s_first_unchosen
                             s_next_slot += 1
+                            while s_next_slot in s_learned:
+                                s_next_slot += 1
 
                             # Let s_next_slot skip the skip slots
                             while s_next_slot in c_my_skip_slot:
@@ -927,6 +948,8 @@ def handle_replica(replica_id, replica_config_list):
                                  s_next_slot, s_replica_config, c_my_drop_rate)
 
                     s_next_slot += 1
+                    while s_next_slot in s_learned:
+                            s_next_slot += 1
                     print('rtrt', s_next_slot)
 
                     # Let s_next_slot skip the skip slots
@@ -950,6 +973,9 @@ def handle_replica(replica_id, replica_config_list):
 
                 # If I happened to be the new leader
                 if u_get_id(s_leader_propose_no, c_replica_num) == replica_id:
+                    # Change s_next_slot back to s_first_unchosen
+                    s_next_slot = s_first_unchosen
+
                     # Initialize temp variables with leader's own slot
                     t_value = s_accepted.get(s_next_slot, None)
                     t_propose_no = s_proposer.get(s_next_slot, 0)
