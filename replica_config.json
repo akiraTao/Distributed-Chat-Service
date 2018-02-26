@@ -1,6 +1,6 @@
 {
     "f": 1,
-    "mode": "manual",
+    "mode": "script",
     "replica_list": [
         {
             "id": 0,

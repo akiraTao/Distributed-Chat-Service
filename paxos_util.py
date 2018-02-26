@@ -36,6 +36,7 @@ def paxos_ack_prepare(my_id,
                       client_addr,
                       no_more_accepted,
                       slot,
+                      leader_propose_no,
                       leader_id,
                       replica_config,
                       drop_rate):
@@ -43,10 +44,11 @@ def paxos_ack_prepare(my_id,
     message = {
         'message_type' : 'ack_prepare',
         'accepted' : value,
-        'proposer' : propose_no,
+        'value_proposer' : propose_no,
         'client_request' : client_request,
         'client_addr' : client_addr,
         'no_more_accepted' : no_more_accepted,
+        'proposer' : leader_propose_no,
         'slot' : slot
     }
 

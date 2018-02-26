@@ -29,6 +29,7 @@ def main(client_no, msg_no, client_drop_rate):
         for i in range(int(msg_no)):
             messagetxt.write('s\n')
             messagetxt.write('message_{}_{}\n'.format(client_i, i))
+            messagetxt.write('p\n')
 
         messagetxt.write('p\n')
         messagetxt.write('e\n')
