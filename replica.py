@@ -76,10 +76,6 @@ def handle_replica(replica_id, replica_config_list):
     c_my_skip_slot = s_replica_config[replica_id]['skip_slot']
     c_my_drop_rate = s_replica_config[replica_id]['drop_rate']
 
-    # Let s_next_slot skip the skip slots
-    while s_next_slot in c_my_skip_slot:
-        s_next_slot += 1
-
     # Build the socket to receive external message
     # UDP socket also has buffer to store incoming messages
     my_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -297,7 +293,7 @@ def handle_replica(replica_id, replica_config_list):
                             if slot_to_fill > s_last_accepted: 
                                 s_last_accepted = slot_to_fill
 
-                            paxos_propose(replica_id, value, s_leader_propose_no, client_request, client_addr,
+                            paxos_propose(replica_id, value, propose_no, client_request, client_addr,
                                           s_first_unchosen, slot_to_fill, s_replica_config, c_my_drop_rate)
 
                             paxos_accept(replica_id,
@@ -309,7 +305,6 @@ def handle_replica(replica_id, replica_config_list):
                                          s_replica_config,
                                          c_my_drop_rate)
 
-                            # TODO: check whether this is correct
                             s_waiting_client = False
 
                     # Clear the temp variables for future usage
@@ -326,10 +321,6 @@ def handle_replica(replica_id, replica_config_list):
                         # Now s_next_slot is independent of s_first_unchosen
                         s_next_slot += 1
                         while s_next_slot in s_learned:
-                            s_next_slot += 1
-
-                        # Let s_next_slot skip the skip slots
-                        while s_next_slot in c_my_skip_slot:
                             s_next_slot += 1
 
                         while s_request_queue != []:
@@ -359,7 +350,7 @@ def handle_replica(replica_id, replica_config_list):
                             if s_next_slot > s_last_accepted: 
                                 s_last_accepted = s_next_slot
 
-                            paxos_propose(replica_id, value, s_leader_propose_no, client_request, client_addr,
+                            paxos_propose(replica_id, value, propose_no, client_request, client_addr,
                                           s_first_unchosen, s_next_slot, s_replica_config, c_my_drop_rate)
 
                             paxos_accept(replica_id,
@@ -376,10 +367,6 @@ def handle_replica(replica_id, replica_config_list):
                             while s_next_slot in s_learned:
                                 s_next_slot += 1
 
-                            # Let s_next_slot skip the skip slots
-                            while s_next_slot in c_my_skip_slot:
-                                s_next_slot += 1
-
                         # After exhausting the request queue, have to wait
                         s_waiting_client = True    
 
@@ -388,10 +375,6 @@ def handle_replica(replica_id, replica_config_list):
                     # Just jump to the next slot
                     s_next_slot += 1
                     while s_next_slot in s_learned:
-                        s_next_slot += 1
-
-                    # Let s_next_slot skip the skip slots
-                    while s_next_slot in c_my_skip_slot:
                         s_next_slot += 1
 
                     # Initialize temp variables with leader's own slot
@@ -460,7 +443,7 @@ def handle_replica(replica_id, replica_config_list):
                          s_client_addr[prop_slot],
                          prop_slot, s_replica_config, c_my_drop_rate)
 
-            # TODO: send help message to the leader based on first_unchosen
+            # Send help_me_choose based on received first_unchosen
             if prop_first_unchosen > s_first_unchosen:
                 leader_id = u_get_id(s_leader_propose_no, c_replica_num)
                 paxos_help_me_choose(replica_id, s_first_unchosen, leader_id,
@@ -510,11 +493,14 @@ def handle_replica(replica_id, replica_config_list):
                              accept_slot, s_replica_config, c_my_drop_rate)
             # If the accept message is just this propose_no:
             else:
+                print('xaxa', accept_propose_no, s_proposer.get(accept_slot), s_accept_msg_count.get(accept_slot))
                 # If the acceptor didn't get propose message but get accept message:
                 # It is possible that a replica only received prepare but not propose
+                # The first two conditions are not enough since timeout may also lead to view change,
+                #   in which case s_accept_msg_count is not initialized
                 if (accept_slot not in s_accept_msg_count) or\
-                        (s_accept_msg_count[accept_slot] == 0):
-                        # (accept_propose_no > s_proposer[accept_slot]) or\
+                        (s_accept_msg_count[accept_slot] == 0) or\
+                        (accept_propose_no > s_proposer[accept_slot]):
                     # This should not happen when I am leader
                     assert ( u_get_id(s_leader_propose_no, c_replica_num) != replica_id ) 
                     s_accepted[accept_slot] = accept_value
@@ -537,6 +523,7 @@ def handle_replica(replica_id, replica_config_list):
                     
                 else:
                     assert ( s_accept_msg_count[accept_slot] > 0 )
+                    print('xbxb', accept_propose_no, s_proposer.get(accept_slot))
                     s_accept_msg_count[accept_slot] += 1
 
             # If the majority accept arrives, learn the value
@@ -621,7 +608,7 @@ def handle_replica(replica_id, replica_config_list):
                                 if slot_to_fill > s_last_accepted: 
                                     s_last_accepted = slot_to_fill
 
-                                paxos_propose(replica_id, value, s_leader_propose_no, client_request, client_addr,
+                                paxos_propose(replica_id, value, propose_no, client_request, client_addr,
                                               s_first_unchosen, slot_to_fill, s_replica_config, c_my_drop_rate)
 
                                 paxos_accept(replica_id,
@@ -633,7 +620,6 @@ def handle_replica(replica_id, replica_config_list):
                                              s_replica_config,
                                              c_my_drop_rate)
 
-                                # TODO: check whether this is correct
                                 s_waiting_client = False
 
                         # If the s_slot_buffer_queue is exhausted, need to enter 'dictated' stage
@@ -642,10 +628,6 @@ def handle_replica(replica_id, replica_config_list):
                             # Now s_next_slot is independent of s_first_unchosen
                             s_next_slot += 1
                             while s_next_slot in s_learned:
-                                s_next_slot += 1
-
-                            # Let s_next_slot skip the skip slots
-                            while s_next_slot in c_my_skip_slot:
                                 s_next_slot += 1
 
                             while s_request_queue != []:
@@ -675,7 +657,7 @@ def handle_replica(replica_id, replica_config_list):
                                 if s_next_slot > s_last_accepted: 
                                     s_last_accepted = s_next_slot
 
-                                paxos_propose(replica_id, value, s_leader_propose_no, client_request, client_addr,
+                                paxos_propose(replica_id, value, propose_no, client_request, client_addr,
                                               s_first_unchosen, s_next_slot, s_replica_config, c_my_drop_rate)
 
                                 paxos_accept(replica_id,
@@ -692,10 +674,6 @@ def handle_replica(replica_id, replica_config_list):
                                 while s_next_slot in s_learned:
                                     s_next_slot += 1
 
-                                # Let s_next_slot skip the skip slots
-                                while s_next_slot in c_my_skip_slot:
-                                    s_next_slot += 1
-
                             # After exhausting the request queue, have to wait
                             s_waiting_client = True    
 
@@ -703,10 +681,6 @@ def handle_replica(replica_id, replica_config_list):
                         # The feature of skip_slot means that s_next_slot is independent of s_first_unchosen
                         assert ( s_next_slot != s_first_unchosen )
                         s_next_slot = s_first_unchosen if (s_next_slot <= s_first_unchosen) else (s_next_slot + 1)
-
-                        # Let s_next_slot skip the skip slots
-                        while s_next_slot in c_my_skip_slot:
-                            s_next_slot += 1
 
                         # Initialize temp variables with leader's own slot
                         t_value = s_accepted.get(s_next_slot, None)
@@ -732,9 +706,6 @@ def handle_replica(replica_id, replica_config_list):
                 else:
                     # The feature of skip_slot means that s_next_slot is independent of s_first_unchosen
                     s_next_slot = s_first_unchosen if (s_next_slot <= s_first_unchosen) else (s_next_slot + 1)
-                    # Let s_next_slot skip the skip slots
-                    while s_next_slot in c_my_skip_slot:
-                        s_next_slot += 1
 
 
         elif message_type == 'client_request':
@@ -830,7 +801,7 @@ def handle_replica(replica_id, replica_config_list):
                             if slot_to_fill > s_last_accepted: 
                                 s_last_accepted = slot_to_fill
 
-                            paxos_propose(replica_id, value, s_leader_propose_no, client_request, client_addr,
+                            paxos_propose(replica_id, value, propose_no, client_request, client_addr,
                                           s_first_unchosen, slot_to_fill, s_replica_config, c_my_drop_rate)
 
                             paxos_accept(replica_id,
@@ -842,7 +813,6 @@ def handle_replica(replica_id, replica_config_list):
                                          s_replica_config,
                                          c_my_drop_rate)
 
-                            # TODO: check whether this is correct
                             s_waiting_client = False
 
                     # If the s_slot_buffer_queue is exhausted, need to enter 'dictated' stage
@@ -853,11 +823,6 @@ def handle_replica(replica_id, replica_config_list):
                         s_next_slot += 1
                         while s_next_slot in s_learned:
                             s_next_slot += 1
-
-                        # Let s_next_slot skip the skip slots
-                        while s_next_slot in c_my_skip_slot:
-                            s_next_slot += 1
-
 
                         while s_request_queue != []:
                             client_message = s_request_queue.pop(0)
@@ -886,7 +851,7 @@ def handle_replica(replica_id, replica_config_list):
                             if s_next_slot > s_last_accepted: 
                                 s_last_accepted = s_next_slot
 
-                            paxos_propose(replica_id, value, s_leader_propose_no, client_request, client_addr,
+                            paxos_propose(replica_id, value, propose_no, client_request, client_addr,
                                           s_first_unchosen, s_next_slot, s_replica_config, c_my_drop_rate)
 
                             paxos_accept(replica_id,
@@ -901,10 +866,6 @@ def handle_replica(replica_id, replica_config_list):
                             # Now s_next_slot is independent of s_first_unchosen
                             s_next_slot += 1
                             while s_next_slot in s_learned:
-                                s_next_slot += 1
-
-                            # Let s_next_slot skip the skip slots
-                            while s_next_slot in c_my_skip_slot:
                                 s_next_slot += 1
 
                         # After exhausting the request queue, have to wait
@@ -949,12 +910,8 @@ def handle_replica(replica_id, replica_config_list):
 
                     s_next_slot += 1
                     while s_next_slot in s_learned:
-                            s_next_slot += 1
-                    print('rtrt', s_next_slot)
-
-                    # Let s_next_slot skip the skip slots
-                    while s_next_slot in c_my_skip_slot:
                         s_next_slot += 1
+                    print('rtrt', s_next_slot)
 
                 else:
                     # Other state is not expected
@@ -1074,16 +1031,10 @@ def handle_replica(replica_id, replica_config_list):
             # Update s_next_slot
             s_next_slot = s_first_unchosen if (s_next_slot <= s_first_unchosen) else s_next_slot
 
-            # Let s_next_slot skip the skip slots
-            while s_next_slot in c_my_skip_slot:
-                s_next_slot += 1
-
-
         else:
             print('Replica {} received an erroneous message {}'.\
                 format(replica_id))
             
-
 
     my_socket.close()
 
