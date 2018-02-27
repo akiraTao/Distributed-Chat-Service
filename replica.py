@@ -212,46 +212,44 @@ def handle_replica(replica_id, replica_config_list):
 
                 # If the majority contains value, propose that value
                 if t_value is not None:
-                    # Cannot process duplicate client requests
                     if tuple(t_client_request) in s_chosen_client_request:
                         # But tell client that message has already been learnt
                         paxos_ack_client(replica_id, t_client_request[1],
                                           (t_client_addr[0], t_client_addr[1]), c_my_drop_rate)
 
-                    else:
-                        # First the leader itself should accept the value
-                        s_accepted[s_next_slot] = t_value
-                        s_proposer[s_next_slot] = s_leader_propose_no
-                        s_client_request[s_next_slot] = copy.deepcopy(t_client_request)
-                        s_client_addr[s_next_slot] = copy.deepcopy(t_client_addr)
+                    # First the leader itself should accept the value
+                    s_accepted[s_next_slot] = t_value
+                    s_proposer[s_next_slot] = s_leader_propose_no
+                    s_client_request[s_next_slot] = copy.deepcopy(t_client_request)
+                    s_client_addr[s_next_slot] = copy.deepcopy(t_client_addr)
 
-                        # Increment the s_accept_msg_count
-                        s_accept_msg_count[s_next_slot] = 1
+                    # Increment the s_accept_msg_count
+                    s_accept_msg_count[s_next_slot] = 1
 
-                        # Update last_accepted if necessary
-                        if s_next_slot > s_last_accepted: 
-                            s_last_accepted = s_next_slot
+                    # Update last_accepted if necessary
+                    if s_next_slot > s_last_accepted: 
+                        s_last_accepted = s_next_slot
 
-                        paxos_propose(replica_id, t_value, s_leader_propose_no,
-                                      t_client_request, t_client_addr, 
-                                      s_first_unchosen, s_next_slot,
-                                      s_replica_config, c_my_drop_rate)
+                    paxos_propose(replica_id, t_value, s_leader_propose_no,
+                                  t_client_request, t_client_addr, 
+                                  s_first_unchosen, s_next_slot,
+                                  s_replica_config, c_my_drop_rate)
 
-                        paxos_accept(replica_id,
-                                     s_accepted[acked_slot],
-                                     s_proposer[acked_slot],
-                                     s_client_request[acked_slot],
-                                     s_client_addr[acked_slot],
-                                     acked_slot, s_replica_config, c_my_drop_rate)
+                    paxos_accept(replica_id,
+                                 s_accepted[acked_slot],
+                                 s_proposer[acked_slot],
+                                 s_client_request[acked_slot],
+                                 s_client_addr[acked_slot],
+                                 acked_slot, s_replica_config, c_my_drop_rate)
 
-                        # Clear the temp variables for future usage
-                        t_value = None
-                        t_propose_no = 0
-                        t_client_request = None
-                        t_client_addr = None
-                        t_no_more_accepted = True
+                    # Clear the temp variables for future usage
+                    t_value = None
+                    t_propose_no = 0
+                    t_client_request = None
+                    t_client_addr = None
+                    t_no_more_accepted = True
 
-                        continue
+                    continue
 
                 # Add this slot to slot_buffer_queue
                 s_slot_buffer_queue.append(acked_slot)
@@ -274,7 +272,6 @@ def handle_replica(replica_id, replica_config_list):
                             if tuple(client_request) in s_chosen_client_request:
                                 paxos_ack_client(replica_id, client_request[1],
                                                  (client_addr[0], client_addr[1]), c_my_drop_rate)
-                                continue
 
                             slot_to_fill = s_slot_buffer_queue.pop(0)
 
@@ -340,7 +337,6 @@ def handle_replica(replica_id, replica_config_list):
                             if tuple(client_request) in s_chosen_client_request:
                                 paxos_ack_client(replica_id, client_request[1],
                                                  (client_addr[0], client_addr[1]), c_my_drop_rate)
-                                continue
 
                             # -------------- Skip the skip slot -------------- #
                             if s_next_slot in c_my_skip_slot:
@@ -539,12 +535,7 @@ def handle_replica(replica_id, replica_config_list):
                     s_accept_msg_count[accept_slot] += 1
 
             # If the majority accept arrives, learn the value
-            if s_accept_msg_count[accept_slot] == c_majority_num:
-                # If the value has already been learnt in another slot:
-                if tuple(accept_client_request) in s_chosen_client_request:
-                    # Learn NoOp in this slot, causing the following log unable to be printed
-                    assert ( 0 )
-                    
+            if s_accept_msg_count[accept_slot] == c_majority_num:    
                 # Learn the accepted value
                 s_learned.add(accept_slot)
                 # Once the client request has been learnt, it should never be executed again
@@ -591,7 +582,6 @@ def handle_replica(replica_id, replica_config_list):
                                 if tuple(client_request) in s_chosen_client_request:
                                     paxos_ack_client(replica_id, client_request[1],
                                                      (client_addr[0], client_addr[1]), c_my_drop_rate)
-                                    continue
 
                                 slot_to_fill = s_slot_buffer_queue.pop(0)
 
@@ -647,7 +637,6 @@ def handle_replica(replica_id, replica_config_list):
                                 if tuple(client_request) in s_chosen_client_request:
                                     paxos_ack_client(replica_id, client_request[1],
                                                      (client_addr[0], client_addr[1]), c_my_drop_rate)
-                                    continue
 
                                 # -------------- Skip the skip slot -------------- #
                                 if s_next_slot in c_my_skip_slot:
@@ -728,7 +717,6 @@ def handle_replica(replica_id, replica_config_list):
             client_request_no = message['client_request_no']
             client_think_propose_no = message['propose_no']
 
-            # Cannot process duplicate client requests
             if (client_id, client_request_no) in s_chosen_client_request:
                 # But tell client that message has already been learnt
                 paxos_ack_client(replica_id, client_request_no,
@@ -796,7 +784,6 @@ def handle_replica(replica_id, replica_config_list):
                             if tuple(client_request) in s_chosen_client_request:
                                 paxos_ack_client(replica_id, client_request[1],
                                                  (client_addr[0], client_addr[1]), c_my_drop_rate)
-                                continue
 
                             slot_to_fill = s_slot_buffer_queue.pop(0)
 
@@ -853,7 +840,6 @@ def handle_replica(replica_id, replica_config_list):
                             if tuple(client_request) in s_chosen_client_request:
                                 paxos_ack_client(replica_id, client_request[1],
                                                  (client_addr[0], client_addr[1]), c_my_drop_rate)
-                                continue
 
                             # -------------- Skip the skip slot -------------- #
                             if s_next_slot in c_my_skip_slot:
@@ -908,7 +894,6 @@ def handle_replica(replica_id, replica_config_list):
                     if tuple(client_request) in s_chosen_client_request:
                         paxos_ack_client(replica_id, client_request[1],
                                          (client_addr[0], client_addr[1]), c_my_drop_rate)
-                        continue
 
                     # -------------- Skip the skip slot -------------- #
                     if s_next_slot in c_my_skip_slot:
@@ -1000,9 +985,12 @@ def handle_replica(replica_id, replica_config_list):
                 os.makedirs(base_dir)
 
             log_file_name = os.path.join(base_dir, 'replica_{}.log'.format(replica_id))
+            check_dup_set = set()
             with open(log_file_name, 'w') as log_file_handle:
                 for i in range(s_first_unchosen):
-                    log_file_handle.write(str(str(i) + ' ' + s_accepted[i]) + '\n')
+                    if tuple(s_client_request[i]) not in check_dup_set:
+                        log_file_handle.write(s_accepted[i] + '\n')
+                    check_dup_set.add(tuple(s_client_request[i]))
 
 
         elif message_type == 'help_me_choose':

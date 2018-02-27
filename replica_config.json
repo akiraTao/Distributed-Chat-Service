@@ -6,7 +6,9 @@
             "id": 0,
             "ip": "localhost",
             "port": 6000,
-            "skip_slot": [],
+            "skip_slot": [
+                1
+            ],
             "drop_rate": 10
         },
         {
@@ -20,7 +22,9 @@
             "id": 2,
             "ip": "localhost",
             "port": 6002,
-            "skip_slot": [],
+            "skip_slot": [
+                2
+            ],
             "drop_rate": 10
         },
         {
@@ -76,7 +80,9 @@
             "id": 10,
             "ip": "localhost",
             "port": 6010,
-            "skip_slot": [],
+            "skip_slot": [
+                4
+            ],
             "drop_rate": 10
         },
         {
