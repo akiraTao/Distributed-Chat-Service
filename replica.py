@@ -43,10 +43,8 @@ def handle_replica(replica_id, replica_config_list):
     # set(tuple(client_id, newest_request_id))
     # Updated only when the client request has been chosen
     s_chosen_client_request = set()
-
     # The queue that buffers client request message
     s_request_queue = []
-
     # The queue that buffers empty slot message in the prepare phase of leader
     s_slot_buffer_queue = []
 
@@ -544,9 +542,9 @@ def handle_replica(replica_id, replica_config_list):
             if s_accept_msg_count[accept_slot] == c_majority_num:
                 # If the value has already been learnt in another slot:
                 if tuple(accept_client_request) in s_chosen_client_request:
-                    # Learn NoOp in this slot (in fact this is impossible)
+                    # Learn NoOp in this slot, causing the following log unable to be printed
                     assert ( 0 )
-
+                    
                 # Learn the accepted value
                 s_learned.add(accept_slot)
                 # Once the client request has been learnt, it should never be executed again
