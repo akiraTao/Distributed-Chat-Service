@@ -1,14 +1,12 @@
 {
-    "f": 10,
+    "f": 5,
     "mode": "script",
     "replica_list": [
         {
             "id": 0,
             "ip": "localhost",
             "port": 6000,
-            "skip_slot": [
-                1
-            ],
+            "skip_slot": [],
             "drop_rate": 10
         },
         {
@@ -22,9 +20,7 @@
             "id": 2,
             "ip": "localhost",
             "port": 6002,
-            "skip_slot": [
-                2
-            ],
+            "skip_slot": [],
             "drop_rate": 10
         },
         {
@@ -80,78 +76,6 @@
             "id": 10,
             "ip": "localhost",
             "port": 6010,
-            "skip_slot": [
-                4
-            ],
-            "drop_rate": 10
-        },
-        {
-            "id": 11,
-            "ip": "localhost",
-            "port": 6011,
-            "skip_slot": [],
-            "drop_rate": 10
-        },
-        {
-            "id": 12,
-            "ip": "localhost",
-            "port": 6012,
-            "skip_slot": [],
-            "drop_rate": 10
-        },
-        {
-            "id": 13,
-            "ip": "localhost",
-            "port": 6013,
-            "skip_slot": [],
-            "drop_rate": 10
-        },
-        {
-            "id": 14,
-            "ip": "localhost",
-            "port": 6014,
-            "skip_slot": [],
-            "drop_rate": 10
-        },
-        {
-            "id": 15,
-            "ip": "localhost",
-            "port": 6015,
-            "skip_slot": [],
-            "drop_rate": 10
-        },
-        {
-            "id": 16,
-            "ip": "localhost",
-            "port": 6016,
-            "skip_slot": [],
-            "drop_rate": 10
-        },
-        {
-            "id": 17,
-            "ip": "localhost",
-            "port": 6017,
-            "skip_slot": [],
-            "drop_rate": 10
-        },
-        {
-            "id": 18,
-            "ip": "localhost",
-            "port": 6018,
-            "skip_slot": [],
-            "drop_rate": 10
-        },
-        {
-            "id": 19,
-            "ip": "localhost",
-            "port": 6019,
-            "skip_slot": [],
-            "drop_rate": 10
-        },
-        {
-            "id": 20,
-            "ip": "localhost",
-            "port": 6020,
             "skip_slot": [],
             "drop_rate": 10
         }
