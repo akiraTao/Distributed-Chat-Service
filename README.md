@@ -12,7 +12,7 @@ Both replica.py and client.py needs replica_config.json to run.
 
 The service provided both script mode and manual mode. In script mode, running
 replica.py will spawn 2F+1 subprocesses representing 2F+1 replicas internally.
-In manual mode, executing one script will spaen 1 replica process, so one should
+In manual mode, executing one script will spawn 1 replica process, so one should
 manually spawn 2F+1 replicas in 2F+1 terminals for simulation.
 
 
@@ -112,4 +112,3 @@ CLIENT_NUM * MSG_NUM messages sent to the chat server.
 5. For each p command from the client, the replica will flush its log file.
 One can see that in the working directory, a subdirectory called /log is generated,
 which includes log file for each replica.
-

@@ -318,11 +318,10 @@ def handle_replica(replica_id, replica_config_list):
                     if s_slot_buffer_queue == []:
                         s_leader_state = 'dictated'
 
-                        print('popo', s_next_slot)
-
                         # Now s_next_slot is independent of s_first_unchosen
                         s_next_slot += 1
                         while s_next_slot in s_learned:
+                            t_no_more_accepted = True
                             s_next_slot += 1
 
                         while s_request_queue != []:
@@ -342,6 +341,7 @@ def handle_replica(replica_id, replica_config_list):
                             if s_next_slot in c_my_skip_slot:
                                 s_next_slot += 1
                                 while s_next_slot in s_learned:
+                                    t_no_more_accepted = True
                                     s_next_slot += 1
                                 continue
                             # -------------- Skip the skip slot -------------- #
@@ -375,6 +375,7 @@ def handle_replica(replica_id, replica_config_list):
                             # Now s_next_slot is independent of s_first_unchosen
                             s_next_slot += 1
                             while s_next_slot in s_learned:
+                                t_no_more_accepted = True
                                 s_next_slot += 1
 
                         # After exhausting the request queue, have to wait
@@ -385,6 +386,7 @@ def handle_replica(replica_id, replica_config_list):
                     # Just jump to the next slot
                     s_next_slot += 1
                     while s_next_slot in s_learned:
+                        t_no_more_accepted = True
                         s_next_slot += 1
 
                     # Initialize temp variables with leader's own slot
@@ -545,10 +547,6 @@ def handle_replica(replica_id, replica_config_list):
                     while s_first_unchosen in s_learned:
                         s_first_unchosen += 1
 
-
-                # print('Replica {} done with slot {}, value {}'.\
-                #     format(replica_id, accept_slot, s_accepted[accept_slot]))
-
                 paxos_ack_client(replica_id,
                                  s_client_request[accept_slot][1],
                                  s_client_addr[accept_slot],
@@ -623,6 +621,7 @@ def handle_replica(replica_id, replica_config_list):
                             # Now s_next_slot is independent of s_first_unchosen
                             s_next_slot += 1
                             while s_next_slot in s_learned:
+                                t_no_more_accepted = True
                                 s_next_slot += 1
 
                             while s_request_queue != []:
@@ -642,6 +641,7 @@ def handle_replica(replica_id, replica_config_list):
                                 if s_next_slot in c_my_skip_slot:
                                     s_next_slot += 1
                                     while s_next_slot in s_learned:
+                                        t_no_more_accepted = True
                                         s_next_slot += 1
                                     continue
                                 # -------------- Skip the skip slot -------------- #
@@ -674,6 +674,7 @@ def handle_replica(replica_id, replica_config_list):
                                 # Now s_next_slot is independent of s_first_unchosen
                                 s_next_slot += 1
                                 while s_next_slot in s_learned:
+                                    t_no_more_accepted = True
                                     s_next_slot += 1
 
                             # After exhausting the request queue, have to wait
@@ -826,6 +827,7 @@ def handle_replica(replica_id, replica_config_list):
                         # Now s_next_slot is independent of s_first_unchosen
                         s_next_slot += 1
                         while s_next_slot in s_learned:
+                            t_no_more_accepted = True
                             s_next_slot += 1
 
                         while s_request_queue != []:
@@ -845,6 +847,7 @@ def handle_replica(replica_id, replica_config_list):
                             if s_next_slot in c_my_skip_slot:
                                 s_next_slot += 1
                                 while s_next_slot in s_learned:
+                                    t_no_more_accepted = True
                                     s_next_slot += 1
                                 continue
                             # -------------- Skip the skip slot -------------- #
@@ -877,6 +880,7 @@ def handle_replica(replica_id, replica_config_list):
                             # Now s_next_slot is independent of s_first_unchosen
                             s_next_slot += 1
                             while s_next_slot in s_learned:
+                                t_no_more_accepted = True
                                 s_next_slot += 1
 
                         # After exhausting the request queue, have to wait
@@ -899,6 +903,7 @@ def handle_replica(replica_id, replica_config_list):
                     if s_next_slot in c_my_skip_slot:
                         s_next_slot += 1
                         while s_next_slot in s_learned:
+                            t_no_more_accepted = True
                             s_next_slot += 1
                         continue
                     # -------------- Skip the skip slot -------------- #
@@ -929,6 +934,7 @@ def handle_replica(replica_id, replica_config_list):
 
                     s_next_slot += 1
                     while s_next_slot in s_learned:
+                        t_no_more_accepted = True
                         s_next_slot += 1
 
                 else:
