@@ -1,5 +1,3 @@
-This is an implementation of EECS591 Project: MultiPaxos-based chat service.
-Teammate: Da Fang (fangda), Sixu Tao (taosixu)
 Reference: https://ramcloud.stanford.edu/~ongaro/userstudy/paxos.pdf
 
 
@@ -17,11 +15,6 @@ manually spawn 2F+1 replicas in 2F+1 terminals for simulation.
 
 
 Usage:
-
-0. Put everything inside the zip file into the same directory. paxos_util.py
-is just an internal file used by replica.py and client.py, so user doesn't
-need to care about that.
-
 
 1. First we need to produce replica_config.json for configuring all replicas,
 which is required before running both replica.py and client.py.
@@ -90,15 +83,15 @@ a) s [press enter] MESSAGE: send MESSAGE to be logged to replicas.
 b) p [press enter]:         let replicas write their logs to actual log file
 c) e [press enter]:         send the client process
 
-Now you can communictate with chat service!
+Now you can communicate with chat service!
 
 Notice that replicas won't add their learnt values into logged files until
 the client enters p command. In other words, client's p command will trigger logging action.
 
 
 4. The above way of running client cannot simulate the sitution where multiple
-clients are sending messages to the system concurrently. THerefore, we also
-implemented a script generate_client_csh.py to faclilate this procedure.
+clients are sending messages to the system concurrently. Therefore, we also
+implemented a script generate_client_csh.py to facilitate this procedure.
 One can run
 
     python3 generate_client_csh.py [CLIENT_NUM] [MSG_NUM] [MSG_DROP_RATE],
